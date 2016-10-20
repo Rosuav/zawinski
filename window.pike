@@ -1,6 +1,7 @@
 inherit movablewindow;
 constant is_subwindow = 0;
 constant pos_key = "mainwindow";
+constant load_size = 1;
 
 void makewindow()
 {
@@ -12,10 +13,16 @@ void makewindow()
 			->add(GTK2.MenuItem("_Help")->set_submenu((object)GTK2.Menu()))
 		,0,0,0)
 		->add(GTK2.Hbox(0, 0)
-			->pack_start(win->folderview = GTK2.TreeView(win->folders = GTK2.TreeStore(({"string"}))), 0, 0, 0)
+			->pack_start(win->folderview = GTK2.TreeView(win->folders = GTK2.TreeStore(({"string"})))
+				->append_column(GTK2.TreeViewColumn("Folder", GTK2.CellRendererText(), "text", 0))
+			, 0, 0, 0)
 			->add(win->messageview = GTK2.TreeView(win->messages = GTK2.TreeStore(({"string"}))))
 		)
 	);
+	object inbox = win->folders->append();
+	win->folders->set_row(inbox, ({"chrisa@kepl.com.au"}));
+	win->folders->set_row(win->folders->append(inbox), ({"INBOX"}));
+	win->folderview->expand_all();
 	::makewindow();
 }
 
