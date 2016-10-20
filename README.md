@@ -20,3 +20,5 @@ update - just reopen them). Menu bar for compose etc.
 
 TODO: Threading. Should messages be treated as conversations (Gmail style), or
 as stand-alone entities (classic style), or as some kind of tree (Mailman style)?
+A tree could cost a lot in performance (have to load all messages), and might
+complicate the sorting.
