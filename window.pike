@@ -2,11 +2,12 @@ inherit movablewindow;
 constant is_subwindow = 0;
 constant pos_key = "mainwindow";
 constant load_size = 1;
+object mainwindow;
 
 void makewindow()
 {
 	win->menuitems = ([]);
-	win->mainwindow = GTK2.Window((["title": "Zawinski"]))->add(GTK2.Vbox(0, 0)
+	win->mainwindow = mainwindow = GTK2.Window((["title": "Zawinski"]))->add(GTK2.Vbox(0, 0)
 		->pack_start(GTK2.MenuBar()
 			->add(GTK2.MenuItem("_Options")->set_submenu(win->optmenu = (object)GTK2.Menu()))
 		,0,0,0)
@@ -36,15 +37,28 @@ void opt_update()
 	MessageBox(0, GTK2.MESSAGE_ERROR, GTK2.BUTTONS_OK, err + " compilation error(s) - see console", win->mainwindow);
 }
 
+constant options_accounts = "Configure accounts";
+class opt_accounts
+{
+	inherit configdlg;
+	mapping(string:mixed) windowprops=(["title": "Configure mail accounts"]);
+	constant elements=({"kwd:Email address", "IMAP server"});
+	constant persist_key = "accounts";
+	void save_content() {call_out(G->G->connection->connect, 0);}
+	void delete_content() {call_out(G->G->connection->connect, 0);}
+}
+
 void create(string name)
 {
+	if (G->G->window) mainwindow = G->G->window->mainwindow;
+	G->G->window = this;
 	::create(name);
-	foreach (indices(this_program), string attr) if (sscanf(attr, "options_%s", string opt) && this["opt_" + opt])
+	foreach (sort(indices(this_program)), string attr) if (sscanf(attr, "options_%s", string opt) && this["opt_" + opt])
 	{
-		if (object old = win->menuitems[name]) old->destroy();
+		if (object old = win->menuitems[opt]) old->destroy();
 		object mi = GTK2.MenuItem(this_program[attr]);
 		win->optmenu->add(mi->show());
 		mi->signal_connect("activate", this["opt_" + opt]);
-		win->menuitems[name] = mi;
+		win->menuitems[opt] = mi;
 	}
 }
