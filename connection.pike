@@ -1,14 +1,21 @@
 mapping(string:mixed) connections = ([]);
 
+void response_auth(mapping conn, bytes line)
+{
+	if (has_prefix(line, "OK")) send(conn, "folders list \"\" *\n");
+	else send(conn, "quit logout\n");
+}
+
 //NOTE: Currently presumes ASCII for everything that matters.
 //Binary data may be transmitted at various points (though it *should* be
 //MIME-encoded or something), but I'm not going to deal with that yet.
 void sockread(mapping conn, bytes data)
 {
 	conn->readbuffer += data;
-	while (sscanf(conn->readbuffer, "%s\n%s", bytes line, conn->readbuffer))
+	while (sscanf(conn->readbuffer, "%s %s\n%s", ascii msg, bytes line, conn->readbuffer))
 	{
 		write(">>> %s\n", line);
+		if (function resp = conn["response_" + msg] || this["response_" + msg]) resp(conn, line);
 	}
 }
 
@@ -24,6 +31,15 @@ void sockclosed(mapping conn)
 void sockwrite(mapping conn)
 {
 	if (conn->sock && conn->writeme!="") conn->writeme=conn->writeme[conn->sock->write(conn->writeme)..];
+}
+
+int send(mapping conn,string text)
+{
+	if (!conn) return 0;
+	if (!conn->sock) return 0; //Discard text if we're not connected - no point keeping it all.
+	if (text) conn->writeme += string_to_utf8(text);
+	sockwrite(conn);
+	return 1;
 }
 
 void complete_connection(string|Stdio.File|int(0..0) status, mapping conn)

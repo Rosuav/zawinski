@@ -10,6 +10,7 @@ void create(string n)
 	if (!G->G->dns_aaaa) G->G->dns_aaaa=([]); //0 means unknown or error; ({ }) meeans successful empty response.
 }
 
+typedef string(0..127) ascii;
 typedef string(0..255) bytes;
 
 //Usage: gtksignal(some_object,"some_signal",handler,arg,arg,arg) --> save that object.
