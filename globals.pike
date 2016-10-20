@@ -6,7 +6,11 @@ void create(string n)
 		GTK2.setup_gtk(G->G->argv);
 		G->G->windows = ([]);
 	}
+	if (!G->G->dns_a) G->G->dns_a=([]); //Two separate caches, for simplicity.
+	if (!G->G->dns_aaaa) G->G->dns_aaaa=([]); //0 means unknown or error; ({ }) meeans successful empty response.
 }
+
+typedef string(0..255) bytes;
 
 //Usage: gtksignal(some_object,"some_signal",handler,arg,arg,arg) --> save that object.
 //Equivalent to some_object->signal_connect("some_signal",handler,arg,arg,arg)
@@ -612,4 +616,162 @@ class configdlg
 		::dosignals();
 		if (actionbtn) win->signals+=({gtksignal(win->pb_action,"clicked",action_callback)});
 	}
+}
+
+//Look up some sort of name and return one or more IP addresses
+class DNS(string hostname,function callback)
+{
+	//NOTE: This would be more idiomatically spelled as "mixed ... cbargs" above, rather
+	//than collecting them up in create(); but in current Pikes (as of 20150827) this is
+	//not working. Until it's fixed _and_ the patch makes its way into all the Pikes I
+	//support, it's safer to just use the non-idiomatic explicit form.
+	array cbargs;
+	//Note that async_dual_client would probably be better, but only marginally, so since
+	//it isn't available on all Pikes, I'll stick with UDP-only. TCP is only of value for
+	//large responses, and we aren't expecting any such here (though it is possible).
+	object cli=Protocols.DNS.async_client();
+
+	array(string) ips=({ }); //May be mutated by the callback; will only ever be appended to, here.
+	int pending; //If this is nonzero, the callback will be called again before destruction - possibly with more IPs (but possibly not)
+
+	//Possible bug sighted 20160330 - a DNS lookup that ought to have succeeded was failing.
+	//Cause uncertain. The cache expired and lookups began working again. Monitor.
+	void dnsresponse(string domain,mapping resp)
+	{
+		/* CACHING [one of the hardest problems in computing]
+
+		For simplicity, don't bother caching negative responses. If we
+		get asked again for something that failed, it's quite possibly
+		because network settings have changed and there's a chance it
+		will now succeed.
+
+		NOTE: If we have a positive response for one protocol, it will
+		be used for future lookups, ignoring the other protocol. For
+		example, if we look up minstrelhall.com and get 203.214.67.43
+		and no AAAA records, we use the 3600 TTL from the A record as
+		an indication that we shouldn't bother asking for AAAA records
+		for the next hour. Forcing IPv6 will retry the query, but other
+		than that, IPv6 will be ignored.
+
+		Note that technically there can be multiple different TTLs on
+		different records of the same type. In practice this will be a
+		rarity, so we just take the lowest TTL from all answers and
+		apply that to all of them. Simpler that way :)
+
+		Note that we depend on upstream DNS not sending us superfluous responses. But
+		we'd depend on them to not send us outright forged responses anyway, so that's
+		not a big deal. If a server sends back a CNAME and a corresponding A/AAAA, we'll
+		get the right address. TODO: Properly handle CNAMEs, including firing off other
+		requests. Easiest to put all answers into the cache, then attempt to pull from
+		the cache to get our actual response. Which means stuffing the cache based on
+		resp->an[*]->name, not the provided domain.
+
+		TODO: Is this getting incorrect results if additional records are sent? CHECK ME!
+		TODO: Report more useful information on failure, eg distinguish NXDOMAIN from
+		an absence of records and from timeouts.
+		TODO: What should happen on SERVFAIL or other responses?
+		*/
+		if (resp && resp->an)
+		{
+			array ans = (resp->an->a + resp->an->aaaa) - ({0});
+			mapping m = (resp->qd[0]->type==Protocols.DNS.T_AAAA) ? G->G->dns_aaaa : G->G->dns_a;
+			m[domain] = ans;
+			call_out(m_delete, min(@resp->an->ttl), m, domain);
+			ips += ans;
+		}
+		--pending;
+		callback(this,@cbargs);
+	}
+
+	void create(mixed ... args)
+	{
+		cbargs=args; //See above, can't be done the clean way.
+		//TODO: What should be done if connection/protocol changes and we
+		//have cached info? Should the cache retain A and AAAA records
+		//separately, and proceed with the two parts independently?
+		string prot=persist["connection/protocol"];
+		//IP address literals get "resolved" instantly. And if the user requested direct connection attempts, same.
+		//Note that direct connection attempts will normally result in synchronous DNS lookups. This will lag out the main
+		//thread, and thus cause distinctly unpleasant problems on timeouts. But if you want it, go for it.
+		if (prot=="*" || sscanf(hostname,"%d.%d.%d.%d",int q,int w,int e,int r)==4 || Protocols.IPv6.parse_addr(hostname))
+		{
+			ips=({hostname});
+			call_out(callback,0,this,@cbargs); //The callback is always queued on the backend rather than being called synchronously.
+			return;
+		}
+		//Check for cached responses. Normally, this will find either neither or both, but it's
+		//possible it'll find just one, eg if there's a query currently in flight. This will
+		//result in a partial response being given as if it were the entire; this is expected
+		//to be rare (it'd happen if a DNS server is way slower responding to AAAA requests than
+		//to A requests, or something like that), and will clear itself up once the other cache
+		//gets populated (by the original request).
+		array cache4 = G->G->dns_a[hostname];
+		array cache6 = G->G->dns_aaaa[hostname];
+		if (cache4 || cache6) {ips = cache4 + (cache6||({ })); call_out(callback, 0, this, @cbargs); return;}
+		if (prot!="6") {++pending; cli->do_query(hostname, Protocols.DNS.C_IN, Protocols.DNS.T_A,    dnsresponse);}
+		if (prot!="4") {++pending; cli->do_query(hostname, Protocols.DNS.C_IN, Protocols.DNS.T_AAAA, dnsresponse);}
+	}
+
+	string _sprintf(int type) {return type=='O' && sprintf("DNS(%O -> %d/({%{%O,%}}))",hostname,pending,ips);}
+}
+
+//Establish a socket connection to a specified host/port
+//The callback will be called with either a socket object or 0.
+//Connections will be attempted to all available IP addresses
+//for the specified host, in sequence.
+//The callback receives three possible first arguments: an open
+//socket (indicating success), a string (indicating progress),
+//or 0 (indicating failure). The strings are human-readable.
+//Note that the zero indicates complete failure, rather than a
+//single failed connection; if no A/AAAA records are returned,
+//or if multiple are and they've all been tried, the result is
+//the same as the "classic" case of one IP address and a failed
+//connection.
+
+//If connections fail for different reasons, this information is
+//lost. Only the one most recent socket connection errno is kept;
+//in the common case where there is only one IP address for the
+//host name, this is fine, but if there are both IPv4 and IPv6
+//addresses, it's possible that an interesting error on the IPv4
+//will be ousted by the uninteresting error that this computer has
+//no IPv6 routing. It may be necessary to make errno into an array.
+class establish_connection(string hostname,int port,function callback)
+{
+	object sock;
+	object dns;
+	array cbargs;
+	int errno; //If 0, no socket connections have failed - maybe it was DNS that failed instead.
+	string data_rcvd = "";
+
+	void cancel() {callback=0;} //Prevent further calls to the callback (eg if the user requests cancellation)
+	void connected()
+	{
+		if (!sock) return;
+		if (!sock->is_open() || !sock->query_address()) {sock=0; tryconn(); return;} //Actually a failure, not success.
+		callback(sock, @cbargs);
+		cancel();
+	}
+
+	//Having *something*, anything, as a socket-read callback seems to make the socket-disconnect
+	//callback functional. HUH?!? So we have to snapshot the text for the caller, making this a
+	//bit like the way TCP fast-open works.
+	void readable(mixed id,bytes data) {data_rcvd += data;}
+	void connfailed() {errno = sock->errno(); sock = 0; tryconn();}
+
+	void tryconn()
+	{
+		if (sock || !callback) return;
+		if (!sizeof(dns->ips)) {if (!dns->pending) callback(0,@cbargs); return;} //If we've run out of addresses to try, connection has failed. Otherwise wait for more DNS.
+		[string ip,dns->ips]=Array.shift(dns->ips);
+		callback("Connecting to "+ip+"...", @cbargs); if (!callback) return;
+		sock=Stdio.File(); sock->open_socket();
+		sock->set_nonblocking(readable,connected,connfailed);
+		if (mixed ex=catch {sock->connect(ip,port);})
+		{
+			callback("Exception in connection: "+describe_error(ex), @cbargs);
+			sock=0; tryconn(); //I doubt this will happen repeatedly (and definitely not infinitely), so just recurse. (TBH Pike probably recognizes this as a tail call anyway.)
+		}
+	}
+
+	void create(mixed ... args) {cbargs=args; dns=DNS(hostname,tryconn);} //As above. Note that initializing dns at its declaration would do it before hostname is set.
 }

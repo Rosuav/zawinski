@@ -18,10 +18,6 @@ void makewindow()
 			->add(win->messageview = GTK2.TreeView(win->messages = GTK2.TreeStore(({"string"}))))
 		)
 	);
-	object inbox = win->folders->append();
-	win->folders->set_row(inbox, ({"chrisa@kepl.com.au"}));
-	win->folders->set_row(win->folders->append(inbox), ({"INBOX"}));
-	win->folderview->expand_all();
 	::makewindow();
 }
 
@@ -42,7 +38,7 @@ class opt_accounts
 {
 	inherit configdlg;
 	mapping(string:mixed) windowprops=(["title": "Configure mail accounts"]);
-	constant elements=({"kwd:Email address", "IMAP server"});
+	constant elements=({"kwd:Name", "IMAP server", "Login", "*Password"});
 	constant persist_key = "accounts";
 	void save_content() {call_out(G->G->connection->connect, 0);}
 	void delete_content() {call_out(G->G->connection->connect, 0);}
