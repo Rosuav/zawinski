@@ -13,3 +13,10 @@ Hmm. Where would be the boundary between repos? They'd want to share a lot of th
 structure - not just the one master file that never updates. So does an update
 download from two repos? (Probably okay.) Should there be two files of globals -
 one shared, one private?
+
+Basic structure: Tree down the left (accounts and folders), and messages on the
+right. Double click message to open independent window (not affected by code
+update - just reopen them). Menu bar for compose etc.
+
+TODO: Threading. Should messages be treated as conversations (Gmail style), or
+as stand-alone entities (classic style), or as some kind of tree (Mailman style)?
