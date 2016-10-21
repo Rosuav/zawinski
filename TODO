@@ -1,0 +1,26 @@
+Email Client Specs
+
+Essentials
+IMAP including msg move; delete
+
+Address Book with 
+	Groups by Tags (like Gmail, PMMail)
+	search for duplicates and resolve with merge (like Gmail)
+	auto-save addressees on Send
+	import/export Vcard, csv
+Read Messages
+	select HTML on/off
+
+Write messages
+	Canned Responses = boilerplate text
+	multiple selectable sig blocks
+Send messages
+	check for attachments, prompt
+
+Store profile/config settings, addresses boilerplate responses & sigs in plain text files 
+
+Nice to have
+Colour scheme selectable (use Chromes from TBird? looks like CSS stuff there)
+VCard 
+preview pane
+Attachment manager - dispose of incoming 
