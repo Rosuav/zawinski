@@ -2,8 +2,20 @@ mapping(string:mixed) connections = ([]);
 
 void response_auth(mapping conn, bytes line)
 {
-	if (has_prefix(line, "OK")) send(conn, "folders list \"\" *\n");
+	if (has_prefix(line, "OK")) {send(conn, "folders list \"\" *\r\n"); conn->folders = (<>);}
 	else send(conn, "quit logout\n");
+}
+
+void response_UNTAGGED_LIST(mapping conn, bytes line)
+{
+	sscanf(line, "(%s) %O %O", string flags, string sep, string fld);
+	if (sep != ".") fld = replace(fld, sep, "."); //I doubt this will happen.
+	if (conn->folders) conn->folders[fld] = 1;
+}
+
+void response_folders(mapping conn, bytes line)
+{
+	if (has_prefix(line, "OK")) write("Folders:%{ %s%}\n", sort((array)conn->folders));
 }
 
 //NOTE: Currently presumes ASCII for everything that matters.
@@ -14,7 +26,9 @@ void sockread(mapping conn, bytes data)
 	conn->readbuffer += data;
 	while (sscanf(conn->readbuffer, "%s %s\n%s", ascii msg, bytes line, conn->readbuffer))
 	{
-		write(">>> %s\n", line);
+		line = String.trim_all_whites(line);
+		write(">>> [%s] %s\n", msg, line);
+		if (msg == "*") sscanf("UNTAGGED_" + line, "%s %s", msg, line);
 		if (function resp = conn["response_" + msg] || this["response_" + msg]) resp(conn, line);
 	}
 }
