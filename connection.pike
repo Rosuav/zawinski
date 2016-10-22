@@ -88,8 +88,8 @@ void complete_connection(string|Stdio.File|int(0..0) status, mapping conn)
 
 void connect()
 {
-	object win = G->G->window;
-	if (!win) call_out(connect, 0.1); //Shouldn't happen. If we find ourselves racing, somehow, just delay startup a bit.
+	object window = G->G->window;
+	if (!window) call_out(connect, 0.1); //Shouldn't happen. If we find ourselves racing, somehow, just delay startup a bit.
 	mapping lose = connections - persist["accounts"];
 	mapping gain = persist["accounts"] - connections;
 	foreach (lose; string addr; mapping conn)
@@ -97,7 +97,7 @@ void connect()
 		write("Disconnecting from %s\n", addr);
 		m_delete(connections, addr);
 		if (conn->socket) conn->socket->write("a logout\n");
-		win->remove_account(addr);
+		window->remove_account(addr);
 	}
 	foreach (gain; string addr; mapping info)
 	{
@@ -107,7 +107,7 @@ void connect()
 			"writeme": sprintf("auth login %s %s\n", info->login, info->password),
 		]);
 		conn->establish = establish_connection(info->imap, 143, complete_connection, conn);
-		win->add_account(addr);
+		window->add_account(addr);
 	}
 }
 
