@@ -12,7 +12,7 @@ void getfolders(mapping conn)
 void response_auth(mapping conn, bytes line)
 {
 	if (has_prefix(line, "OK")) getfolders(conn);
-	else send(conn, "quit logout\n");
+	else send(conn, "quit logout\r\n");
 }
 
 void response_UNTAGGED_LIST(mapping conn, bytes line)
@@ -38,7 +38,7 @@ void sockread(mapping conn, bytes data)
 	conn->readbuffer += data;
 	while (sscanf(conn->readbuffer, "%s %s\n%s", ascii msg, bytes line, conn->readbuffer))
 	{
-		line = String.trim_all_whites(line);
+		line = String.trim_all_whites(line); //Will trim off the \r that ought to end the line
 		if (msg == "*") sscanf("UNTAGGED_" + line, "%s %s", msg, line);
 		if (function resp = conn["response_" + msg] || this["response_" + msg]) resp(conn, line);
 		else write(">>> [%s] %s\n", msg, line);
@@ -107,7 +107,7 @@ void connect()
 		mapping conn = connections[addr] = ([
 			"addr": addr,
 			"readbuffer": "",
-			"writeme": sprintf("auth login %s %s\n", info->login, info->password),
+			"writeme": sprintf("auth login %s %s\r\n", info->login, info->password),
 		]);
 		conn->establish = establish_connection(info->imap, 143, complete_connection, conn);
 		window->add_account(addr);
