@@ -83,6 +83,13 @@ void clear_messages()
 
 void update_message(mapping(string:mixed) msg)
 {
+	//TODO: Order by Calendar.dwim_time(msg->INTERNALDATE)->unix_time() descending
+	//TODO: Use msg->headers["message-id"] and msg->headers->references/" " to
+	//establish a parent-child hierarchy (and do the above sort within that).
+	//TODO: See whether it's better to sort by date *ascending* for everything after
+	//the first level of messages. That would keep conversations together; within a
+	//thread, new messages would appear at the bottom, but new threads would appear
+	//at the top.
 	object iter = win->messages->append();
 	msg->rowref = GTK2.TreeRowReference(win->messages, win->messages->get_path(iter));
 	win->messages->set_row(iter, ({
