@@ -12,10 +12,13 @@ void makewindow()
 			->add(GTK2.MenuItem("_Options")->set_submenu(win->optmenu = (object)GTK2.Menu()))
 		,0,0,0)
 		->add(GTK2.Hbox(0, 0)
-			->pack_start(win->folderview = GTK2.TreeView(win->folders = GTK2.TreeStore(({"string"})))
-				->append_column(GTK2.TreeViewColumn("Folder", GTK2.CellRendererText(), "text", 0))
-			, 0, 0, 0)
-			->add(win->messageview = GTK2.TreeView(win->messages = GTK2.TreeStore(({"string"}))))
+			->pack_start(GTK2.ScrolledWindow()->set_policy(GTK2.POLICY_NEVER, GTK2.POLICY_AUTOMATIC)->add(
+				win->folderview = GTK2.TreeView(win->folders = GTK2.TreeStore(({"string"})))
+					->append_column(GTK2.TreeViewColumn("Folder", GTK2.CellRendererText(), "text", 0))
+			), 0, 0, 0)
+			->add(GTK2.ScrolledWindow()->set_policy(GTK2.POLICY_AUTOMATIC, GTK2.POLICY_AUTOMATIC)->add(
+				win->messageview = GTK2.TreeView(win->messages = GTK2.TreeStore(({"string"})))
+			))
 		)
 	);
 	::makewindow();
