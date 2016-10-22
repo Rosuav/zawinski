@@ -39,9 +39,9 @@ void sockread(mapping conn, bytes data)
 	while (sscanf(conn->readbuffer, "%s %s\n%s", ascii msg, bytes line, conn->readbuffer))
 	{
 		line = String.trim_all_whites(line);
-		write(">>> [%s] %s\n", msg, line);
 		if (msg == "*") sscanf("UNTAGGED_" + line, "%s %s", msg, line);
 		if (function resp = conn["response_" + msg] || this["response_" + msg]) resp(conn, line);
+		else write(">>> [%s] %s\n", msg, line);
 	}
 }
 
