@@ -1,8 +1,17 @@
 mapping(string:mixed) connections = ([]);
 
+//Call this to update the folder list. Currently happens on login;
+//can also be called in response to a user-initiated refresh, on a
+//timer, or after getting some sort of folder error.
+void getfolders(mapping conn)
+{
+	conn->folders = (<>);
+	send(conn, "folders list \"\" *\r\n");
+}
+
 void response_auth(mapping conn, bytes line)
 {
-	if (has_prefix(line, "OK")) {send(conn, "folders list \"\" *\r\n"); conn->folders = (<>);}
+	if (has_prefix(line, "OK")) getfolders(conn);
 	else send(conn, "quit logout\n");
 }
 
@@ -15,7 +24,8 @@ void response_UNTAGGED_LIST(mapping conn, bytes line)
 
 void response_folders(mapping conn, bytes line)
 {
-	if (has_prefix(line, "OK")) write("Folders:%{ %s%}\n", sort((array)conn->folders));
+	if (!has_prefix(line, "OK")) return;
+	write("Folders:%{ %s%}\n", sort((array)conn->folders));
 }
 
 //NOTE: Currently presumes ASCII for everything that matters.
@@ -104,7 +114,7 @@ void connect()
 		]);
 		object root = win->folders->append();
 		win->folders->set_row(root, ({addr}));
-		win->folders->set_row(win->folders->append(root), ({"INBOX"}));
+		win->folders->set_row(win->folders->append(root), ({"(loading)"}));
 		win->folderview->expand_all();
 		conn->establish = establish_connection(info->imap, 143, complete_connection, conn);
 	}
