@@ -111,7 +111,6 @@ void sockread(mapping conn, bytes data)
 		int length = m_delete(conn, "string_literal_length");
 		conn->string_literals += ({conn->readbuffer[..length-1]});
 		conn->readbuffer = m_delete(conn, "string_literal_line") + conn->readbuffer[length..];
-		write("$$$$ %O\n", conn->readbuffer);
 	}
 	while (sscanf(conn->readbuffer, "%s %s\n%s", ascii msg, bytes line, conn->readbuffer))
 	{
