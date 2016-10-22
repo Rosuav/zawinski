@@ -19,13 +19,15 @@ void select_folder(string addr, string folder)
 
 void response_fldselect(mapping conn, bytes line)
 {
+	conn->message_cache = ([]);
+	G->G->window->clear_messages();
 	send(conn, "a uid search all\r\n");
 }
 
 void response_UNTAGGED_SEARCH(mapping conn, bytes line)
 {
 	array(int) uids = (array(int))(line/" ");
-	send(conn, sprintf("a uid fetch %d (flags internaldate rfc822.header)\r\n", uids[0], /*uids[-1]*/));
+	send(conn, sprintf("a uid fetch %d:%d (flags internaldate rfc822.header)\r\n", uids[0], uids[-1]));
 }
 
 void response_auth(mapping conn, bytes line)
@@ -85,7 +87,8 @@ void response_UNTAGGED_FETCH(mapping conn, bytes line)
 	[int idx, array info] = parse_imap(conn, Stdio.Buffer("(" + line + ")"));
 	mapping msg = (mapping)(info/2);
 	if (!msg->UID) return; //We key everything on the UIDs.
-	//TODO.
+	if (string h = msg["RFC822.HEADER"]) msg->headers = MIME.parse_headers(h)[0];
+	G->G->window->update_message(conn->message_cache[msg->UID] += msg);
 }
 
 void response_folders(mapping conn, bytes line)

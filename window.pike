@@ -19,10 +19,11 @@ void makewindow()
 					//Hidden column: IMAP folder name. Consists of the full hierarchy, eg INBOX.Stuff.Old
 			), 0, 0, 0)
 			->add(GTK2.ScrolledWindow()->set_policy(GTK2.POLICY_AUTOMATIC, GTK2.POLICY_AUTOMATIC)->add(
-				win->messageview = GTK2.TreeView(win->messages = GTK2.TreeStore(({"string", "string", "string"})))
-					->append_column(GTK2.TreeViewColumn("From", GTK2.CellRendererText(), "text", 0))
-					->append_column(GTK2.TreeViewColumn("To", GTK2.CellRendererText(), "text", 0))
-					->append_column(GTK2.TreeViewColumn("Subject", GTK2.CellRendererText(), "text", 0))
+				win->messageview = GTK2.TreeView(win->messages = GTK2.TreeStore(({"int", "string", "string", "string"})))
+					//Hidden column: UID
+					->append_column(GTK2.TreeViewColumn("From", GTK2.CellRendererText(), "text", 1))
+					//->append_column(GTK2.TreeViewColumn("To", GTK2.CellRendererText(), "text", 2))
+					->append_column(GTK2.TreeViewColumn("Subject", GTK2.CellRendererText(), "text", 3))
 			))
 		)
 	);
@@ -73,6 +74,23 @@ void update_folders(string addr, array(string) folders)
 		parents[fld] = it;
 	}
 	win->folderview->expand_all();
+}
+
+void clear_messages()
+{
+	win->messages->clear();
+}
+
+void update_message(mapping(string:mixed) msg)
+{
+	object iter = win->messages->append();
+	msg->rowref = GTK2.TreeRowReference(win->messages, win->messages->get_path(iter));
+	win->messages->set_row(iter, ({
+		msg->UID,
+		msg->headers->from || "",
+		msg->headers->to || "",
+		msg->headers->subject || "",
+	}));
 }
 
 void sig_folderview_cursor_changed(object self)
