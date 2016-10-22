@@ -13,8 +13,10 @@ void makewindow()
 		,0,0,0)
 		->add(GTK2.Hbox(0, 0)
 			->pack_start(GTK2.ScrolledWindow()->set_policy(GTK2.POLICY_NEVER, GTK2.POLICY_AUTOMATIC)->add(
-				win->folderview = GTK2.TreeView(win->folders = GTK2.TreeStore(({"string"})))
+				win->folderview = GTK2.TreeView(win->folders = GTK2.TreeStore(({"string", "string"})))
+					->set_headers_visible(0)
 					->append_column(GTK2.TreeViewColumn("Folder", GTK2.CellRendererText(), "text", 0))
+					//Hidden column: IMAP folder name. Consists of the full hierarchy, eg INBOX.Stuff.Old
 			), 0, 0, 0)
 			->add(GTK2.ScrolledWindow()->set_policy(GTK2.POLICY_AUTOMATIC, GTK2.POLICY_AUTOMATIC)->add(
 				win->messageview = GTK2.TreeView(win->messages = GTK2.TreeStore(({"string", "string", "string"})))
@@ -67,10 +69,22 @@ void update_folders(string addr, array(string) folders)
 	{
 		array parts = fld / ".";
 		object it = win->folders->append(parents[parts[..<1]*"."]);
-		win->folders->set_row(it, ({parts[-1]}));
+		win->folders->set_row(it, ({parts[-1], fld}));
 		parents[fld] = it;
 	}
 	win->folderview->expand_all();
+}
+
+void sig_folderview_cursor_changed(object self)
+{
+	object path = self->get_cursor()->path;
+	string folder = win->folders->get_value(win->folders->get_iter(path), 1);
+	//Scan up to get to the top-level entry for this path
+	//We get the array of indices (the fundamental of the path), take just
+	//the first one, and construct a new path consisting of just that.
+	object toplevel = win->folders->get_iter(GTK2.TreePath((string)path->get_indices()[0]));
+	string addr = win->folders->get_value(toplevel, 0);
+	G->G->connection->select_folder(addr, folder);
 }
 
 constant options_update = "Update code";

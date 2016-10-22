@@ -9,6 +9,25 @@ void getfolders(mapping conn)
 	send(conn, "folders list \"\" *\r\n");
 }
 
+void select_folder(string addr, string folder)
+{
+	mapping conn = connections[addr];
+	if (!conn) return;
+	send(conn, "fldselect select " + folder + "\r\n");
+	write("Select [%O] [%O]\n", addr, folder);
+}
+
+void response_fldselect(mapping conn, bytes line)
+{
+	send(conn, "a uid search all\r\n");
+}
+
+void response_UNTAGGED_SEARCH(mapping conn, bytes line)
+{
+	array(int) uids = (array(int))(line/" ");
+	send(conn, sprintf("a uid fetch %d (flags internaldate rfc822.header)\r\n", uids[0], /*uids[-1]*/));
+}
+
 void response_auth(mapping conn, bytes line)
 {
 	if (has_prefix(line, "OK")) getfolders(conn);
@@ -20,6 +39,53 @@ void response_UNTAGGED_LIST(mapping conn, bytes line)
 	sscanf(line, "(%s) %O %O", string flags, string sep, string fld);
 	if (sep != ".") fld = replace(fld, sep, "."); //I doubt this will happen.
 	if (conn->folders) conn->folders[fld] = 1;
+}
+
+mixed parse_imap(mapping conn, Stdio.Buffer buf)
+{
+	if (!sizeof(buf)) return UNDEFINED; //Shouldn't happen.
+	switch (buf[0]) //NOTE: Peeks, doesn't remove this first octet
+	{
+		case '(':
+		{
+			//List. Recurse.
+			array ret = ({ });
+			buf->consume(1);
+			while (buf[0] != ')') //Will throw if the close paren isn't found
+			{
+				ret += ({parse_imap(conn, buf)});
+				buf->sscanf("%[ ]"); //Discard whitespace (maybe other ws too?)
+			}
+			buf->consume(1);
+			return ret;
+		}
+		case '"':
+			//Quoted string
+			return buf->match("%O");
+		case '\0':
+		{
+			//String literal marker
+			buf->consume(1);
+			[string ret, conn->string_literals] = Array.shift(conn->string_literals);
+			return ret;
+		}
+		default:
+		{
+			//I think this will correctly match an ATOM_CHAR (or rather, that it will
+			//correctly reject the atom_specials).
+			string data = buf->match("%[^(){\1- *%]"); //Yes, that's "\1- " - control characters and space are forbidden
+			if (data == (string)(int)data) return (int)data; //Integer
+			return data; //Atom
+		}
+	}
+}
+
+void response_UNTAGGED_FETCH(mapping conn, bytes line)
+{
+	[int idx, array info] = parse_imap(conn, Stdio.Buffer("(" + line + ")"));
+	mapping msg = (mapping)(info/2);
+	if (!msg->UID) return; //We key everything on the UIDs.
+	//TODO.
 }
 
 void response_folders(mapping conn, bytes line)
@@ -51,11 +117,12 @@ void sockread(mapping conn, bytes data)
 		if (line[-1] == '}')
 		{
 			//String literal. We don't properly parse everything, here; just stash it
-			//into the connection mapping and plop in a magic marker of NUL NUL.
+			//into the connection mapping and plop in a magic marker of NUL. Since the
+			//RFC strictly disallows NUL in transmission, this should be safe.
 			int length = (int)(line/"{")[-1];
 			if (length <= 0) continue; //Borked line??
 			if (length >= 4294967296) {conn->sock->close(); return;} //Don't like the idea of loading up 4GB. Might change this later.
-			line = (line/"{")[..<1] * "{" + "\0\0";
+			line = (line/"{")[..<1] * "{" + "\0";
 			if (sizeof(conn->readbuffer) >= length)
 			{
 				//We have the whole string already.
@@ -71,10 +138,23 @@ void sockread(mapping conn, bytes data)
 				return;
 			}
 		}
-		if (msg == "*") sscanf("UNTAGGED_" + line, "%s %s", msg, line);
+		if (msg == "*")
+		{
+			array(string) words = line / " ";
+			foreach (words; int i; string w) if (w != "" && w[0] >= 'A' && w[0] <= 'Z')
+			{
+				//The first alphabetic word is used as the message type.
+				//Example: "* LIST (\HasNoChildren) ..." will be passed to UNTAGGED_LIST
+				//Example: "* 1 FETCH (UID 23232 FLAGS (\Seen))" goes to UNTAGGED_FETCH
+				words[i] = 0;
+				msg = "UNTAGGED_" + w;
+				line = words * " ";
+				break;
+			}
+		}
 		if (function resp = conn["response_" + msg] || this["response_" + msg]) resp(conn, line);
 		else write(">>> [%s] %s\n", msg, line);
-		m_delete(conn, string_literals);
+		m_delete(conn, "string_literals");
 	}
 }
 
