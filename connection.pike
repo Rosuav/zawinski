@@ -106,8 +106,8 @@ void connect()
 			"readbuffer": "",
 			"writeme": sprintf("auth login %s %s\n", info->login, info->password),
 		]);
-		win->add_account(addr);
 		conn->establish = establish_connection(info->imap, 143, complete_connection, conn);
+		win->add_account(addr);
 	}
 }
 
