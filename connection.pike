@@ -36,12 +36,45 @@ void response_folders(mapping conn, bytes line)
 void sockread(mapping conn, bytes data)
 {
 	conn->readbuffer += data;
+	if (conn->string_literal_length)
+	{
+		if (conn->string_literal_length > sizeof(conn->readbuffer)) return; //Still don't have it all
+		int length = m_delete(conn, "string_literal_length");
+		conn->string_literals += ({conn->readbuffer[..length-1]});
+		conn->readbuffer = m_delete(conn, "string_literal_line") + conn->readbuffer[length..];
+		write("$$$$ %O\n", conn->readbuffer);
+	}
 	while (sscanf(conn->readbuffer, "%s %s\n%s", ascii msg, bytes line, conn->readbuffer))
 	{
 		line = String.trim_all_whites(line); //Will trim off the \r that ought to end the line
+		if (line == "") continue;
+		if (line[-1] == '}')
+		{
+			//String literal. We don't properly parse everything, here; just stash it
+			//into the connection mapping and plop in a magic marker of NUL NUL.
+			int length = (int)(line/"{")[-1];
+			if (length <= 0) continue; //Borked line??
+			if (length >= 4294967296) {conn->sock->close(); return;} //Don't like the idea of loading up 4GB. Might change this later.
+			line = (line/"{")[..<1] * "{" + "\0\0";
+			if (sizeof(conn->readbuffer) >= length)
+			{
+				//We have the whole string already.
+				conn->string_literals += ({conn->readbuffer[..length-1]});
+				conn->readbuffer = msg + " " + line + conn->readbuffer[length..];
+				continue;
+			}
+			else
+			{
+				//We don't have the whole string yet. Hold this line until we do.
+				conn->string_literal_length = length;
+				conn->string_literal_line = msg + " " + line;
+				return;
+			}
+		}
 		if (msg == "*") sscanf("UNTAGGED_" + line, "%s %s", msg, line);
 		if (function resp = conn["response_" + msg] || this["response_" + msg]) resp(conn, line);
 		else write(">>> [%s] %s\n", msg, line);
+		m_delete(conn, string_literals);
 	}
 }
 
