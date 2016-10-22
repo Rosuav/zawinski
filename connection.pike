@@ -88,7 +88,7 @@ void complete_connection(string|Stdio.File|int(0..0) status, mapping conn)
 
 void connect()
 {
-	object win = G->G->windows->window;
+	object win = G->G->window;
 	if (!win) call_out(connect, 0.1); //Shouldn't happen. If we find ourselves racing, somehow, just delay startup a bit.
 	mapping lose = connections - persist["accounts"];
 	mapping gain = persist["accounts"] - connections;
@@ -97,13 +97,7 @@ void connect()
 		write("Disconnecting from %s\n", addr);
 		m_delete(connections, addr);
 		if (conn->socket) conn->socket->write("a logout\n");
-		//Delete from the TreeStore. Is there a better way to do this??
-		object iter = win->folders->get_iter_from_string("0");
-		if (!iter) continue; //Shouldn't happen - implies that the tree is empty, ergo we're desynchronized somewhere.
-		do
-		{
-			if (win->folders->get_value(iter, 0) == addr) {win->folders->remove(iter); break;}
-		} while (win->folders->iter_next(iter));
+		win->remove_account(addr);
 	}
 	foreach (gain; string addr; mapping info)
 	{
@@ -112,10 +106,7 @@ void connect()
 			"readbuffer": "",
 			"writeme": sprintf("auth login %s %s\n", info->login, info->password),
 		]);
-		object root = win->folders->append();
-		win->folders->set_row(root, ({addr}));
-		win->folders->set_row(win->folders->append(root), ({"(loading)"}));
-		win->folderview->expand_all();
+		win->add_account(addr);
 		conn->establish = establish_connection(info->imap, 143, complete_connection, conn);
 	}
 }

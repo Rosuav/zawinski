@@ -23,6 +23,32 @@ void makewindow()
 
 int sig_mainwindow_destroy() {exit(0);}
 
+//Locate an account by its text and return an iterator
+object locate_account(string addr)
+{
+	//Is there a better way to do this than just linear searching??
+	object iter = win->folders->get_iter_from_string("0");
+	if (!iter) return 0;
+	do
+	{
+		if (win->folders->get_value(iter, 0) == addr) return iter;
+	} while (win->folders->iter_next(iter));
+}
+
+void remove_account(string addr)
+{
+	object iter = locate_account(addr);
+	if (iter) win->folders->remove(iter);
+}
+
+void add_account(string addr)
+{
+	object root = win->folders->append();
+	win->folders->set_row(root, ({addr}));
+	win->folders->set_row(win->folders->append(root), ({"(loading)"}));
+	win->folderview->expand_all();
+}
+
 constant options_update = "Update code";
 void opt_update()
 {
