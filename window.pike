@@ -102,7 +102,7 @@ void create(string name)
 	foreach (sort(indices(this_program)), string attr) if (sscanf(attr, "options_%s", string opt) && this["opt_" + opt])
 	{
 		if (object old = win->menuitems[opt]) old->destroy();
-		object mi = GTK2.MenuItem(this_program[attr]);
+		object mi = GTK2.MenuItem(this[attr]);
 		win->optmenu->add(mi->show());
 		mi->signal_connect("activate", this["opt_" + opt]);
 		win->menuitems[opt] = mi;
