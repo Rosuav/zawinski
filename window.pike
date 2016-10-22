@@ -17,7 +17,10 @@ void makewindow()
 					->append_column(GTK2.TreeViewColumn("Folder", GTK2.CellRendererText(), "text", 0))
 			), 0, 0, 0)
 			->add(GTK2.ScrolledWindow()->set_policy(GTK2.POLICY_AUTOMATIC, GTK2.POLICY_AUTOMATIC)->add(
-				win->messageview = GTK2.TreeView(win->messages = GTK2.TreeStore(({"string"})))
+				win->messageview = GTK2.TreeView(win->messages = GTK2.TreeStore(({"string", "string", "string"})))
+					->append_column(GTK2.TreeViewColumn("From", GTK2.CellRendererText(), "text", 0))
+					->append_column(GTK2.TreeViewColumn("To", GTK2.CellRendererText(), "text", 0))
+					->append_column(GTK2.TreeViewColumn("Subject", GTK2.CellRendererText(), "text", 0))
 			))
 		)
 	);
