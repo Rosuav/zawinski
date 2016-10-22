@@ -35,17 +35,35 @@ object locate_account(string addr)
 	} while (win->folders->iter_next(iter));
 }
 
+void add_account(string addr)
+{
+	object root = win->folders->append();
+	win->folders->set_row(root, ({addr}));
+	win->folders->set_row(win->folders->append(root), ({"(loading)"}));
+	win->folderview->expand_all();
+}
+
 void remove_account(string addr)
 {
 	object iter = locate_account(addr);
 	if (iter) win->folders->remove(iter);
 }
 
-void add_account(string addr)
+void update_folders(string addr, array(string) folders)
 {
-	object root = win->folders->append();
-	win->folders->set_row(root, ({addr}));
-	win->folders->set_row(win->folders->append(root), ({"(loading)"}));
+	object iter = locate_account(addr);
+	if (!iter) return;
+	//Remove all children
+	while (object it = win->folders->iter_children(iter))
+		win->folders->remove(it);
+	mapping(string:object) parents = (["": iter]);
+	foreach (folders, string fld)
+	{
+		array parts = fld / ".";
+		object it = win->folders->append(parents[parts[..<1]*"."]);
+		win->folders->set_row(it, ({parts[-1]}));
+		parents[fld] = it;
+	}
 	win->folderview->expand_all();
 }
 

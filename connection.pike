@@ -25,7 +25,9 @@ void response_UNTAGGED_LIST(mapping conn, bytes line)
 void response_folders(mapping conn, bytes line)
 {
 	if (!has_prefix(line, "OK")) return;
-	write("Folders:%{ %s%}\n", sort((array)conn->folders));
+	multiset(string) folders = m_delete(conn, "folders");
+	if (equal(folders, conn->last_folders)) return;
+	G->G->window->update_folders(conn->addr, sort((array)folders));
 }
 
 //NOTE: Currently presumes ASCII for everything that matters.
@@ -103,6 +105,7 @@ void connect()
 	{
 		write("Connecting to %s\n", addr);
 		mapping conn = connections[addr] = ([
+			"addr": addr,
 			"readbuffer": "",
 			"writeme": sprintf("auth login %s %s\n", info->login, info->password),
 		]);
