@@ -109,6 +109,13 @@ void response_folders(mapping conn, bytes line)
 	G->G->window->update_folders(conn->addr, sort((array)folders));
 }
 
+void fetch_message(string addr, string key)
+{
+	mapping conn = connections[addr];
+	if (!conn) return;
+	write("Fetching %O : %O\n", addr, key);
+}
+
 //NOTE: Currently presumes ASCII for everything that matters.
 //Binary data may be transmitted at various points (though it *should* be
 //MIME-encoded or something), but I'm not going to deal with that yet.
