@@ -30,7 +30,7 @@ void makewindow()
 			), 0, 0, 0)
 			->add(GTK2.ScrolledWindow()->set_policy(GTK2.POLICY_AUTOMATIC, GTK2.POLICY_AUTOMATIC)->add(
 				win->messageview = GTK2.TreeView(GTK2.TreeModelSort(
-					win->messages = GTK2.TreeStore(({"int", "string", "string", "string", "int", "int"})))
+					win->messages = GTK2.TreeStore(({"int", "string", "string", "string", "int", "int", "string"})))
 					->set_sort_column_id(4, 1)
 				)
 					//Hidden column: UID
@@ -41,6 +41,7 @@ void makewindow()
 					])), "text", 3, "weight", 5))
 					//Hidden column: INTERNALDATE as a Unix time (0 for unknown)
 					//Hidden column: font weight (derived from read/unread status)
+					//Hidden column: lookup key
 			))
 		)
 	);
@@ -133,6 +134,7 @@ void update_message(mapping(string:mixed) msg, mapping(string:mixed)|void parent
 		msg->headers->subject || "",
 		Calendar.dwim_time(msg->INTERNALDATE)->unix_time(),
 		has_value(msg->FLAGS, "\\Seen") ? GTK2.PANGO_WEIGHT_NORMAL : GTK2.PANGO_WEIGHT_BOLD,
+		msg->key,
 	}));
 }
 
@@ -147,6 +149,13 @@ void sig_folderview_cursor_changed(object self)
 	object toplevel = win->folders->get_iter(GTK2.TreePath((string)path->get_indices()[0]));
 	string addr = win->folders->get_value(toplevel, 0);
 	G->G->connection->select_folder(addr, folder);
+}
+
+void sig_messageview_row_activated(object self, object path, object col)
+{
+	string key = win->messages->get_value(win->messages->get_iter(path), 6);
+	//1) Trigger an asynchronous download of this message
+	//2) Open up a new window when the result arrives.
 }
 
 constant options_update = "Update code";
