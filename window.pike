@@ -26,7 +26,9 @@ void makewindow()
 					//Hidden column: UID
 					->append_column(GTK2.TreeViewColumn("From", GTK2.CellRendererText(), "text", 1))
 					//->append_column(GTK2.TreeViewColumn("To", GTK2.CellRendererText(), "text", 2))
-					->append_column(GTK2.TreeViewColumn("Subject", GTK2.CellRendererText(), "text", 3))
+					->append_column(GTK2.TreeViewColumn("Subject", GTK2.CellRendererText(([
+						"ellipsize": GTK2.PANGO_ELLIPSIZE_END, "width-chars": 30
+					])), "text", 3))
 					//Hidden column: INTERNALDATE as a Unix time (0 for unknown)
 			))
 		)
@@ -86,6 +88,12 @@ void clear_messages()
 	win->messages->clear();
 }
 
+string shorten_address(string addr)
+{
+	//TODO: Intelligently shorten a from/to address, eg take the name w/o email addr
+	return addr || "";
+}
+
 void update_message(mapping(string:mixed) msg, mapping(string:mixed)|void parent)
 {
 	//TODO: Order by Calendar.dwim_time(msg->INTERNALDATE)->unix_time() descending
@@ -105,8 +113,8 @@ void update_message(mapping(string:mixed) msg, mapping(string:mixed)|void parent
 	}
 	win->messages->set_row(win->messages->get_iter(msg->rowref->get_path()), ({
 		msg->UID,
-		msg->headers->from || "",
-		msg->headers->to || "",
+		shorten_address(msg->headers->from),
+		shorten_address(msg->headers->to),
 		msg->headers->subject || "",
 		Calendar.dwim_time(msg->INTERNALDATE)->unix_time(),
 	}));
