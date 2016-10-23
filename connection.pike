@@ -94,7 +94,11 @@ void response_UNTAGGED_FETCH(mapping conn, bytes line)
 	//same ID. I don't know what the spec says about this, but it basically means a
 	//broken server.
 	msg->key = msg->headers["message-id"] || msg->UID;
-	G->G->window->update_message(conn->message_cache[msg->key] += msg);
+	mapping parent = 0;
+	if (msg->headers->references)
+		foreach (msg->headers->references/" ", string id)
+			parent = parent || conn->message_cache[id];
+	G->G->window->update_message(conn->message_cache[msg->key] += msg, parent);
 }
 
 void response_folders(mapping conn, bytes line)
