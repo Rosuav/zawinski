@@ -101,6 +101,11 @@ void clear_messages()
 	win->messages->clear();
 }
 
+void show_message(mapping msg)
+{
+	write("Show message: %O\n", msg->key);
+}
+
 string shorten_address(string addr)
 {
 	if (!addr) return "";

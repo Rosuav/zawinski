@@ -86,6 +86,7 @@ void response_UNTAGGED_FETCH(mapping conn, bytes line)
 {
 	[int idx, array info] = parse_imap(conn, Stdio.Buffer("(" + line + ")"));
 	mapping msg = (mapping)(info/2);
+	msg = (conn->message_cache[msg->UID] += msg);
 	if (string h = msg["RFC822.HEADER"]) msg->headers = MIME.parse_headers(h)[0];
 	else msg->headers = (["Headers": "not available"]);
 	//Ideally, we'd like message IDs to be globally unique and perfectly stable.
@@ -94,11 +95,13 @@ void response_UNTAGGED_FETCH(mapping conn, bytes line)
 	//same ID. I don't know what the spec says about this, but it basically means a
 	//broken server.
 	msg->key = msg->headers["message-id"] || msg->UID;
+	conn->message_cache[msg->key] = msg; //Allow lookups by message-id as well as UID
 	mapping parent = 0;
 	if (msg->headers->references)
 		foreach (msg->headers->references/" ", string id)
 			parent = parent || conn->message_cache[id];
-	G->G->window->update_message(conn->message_cache[msg->key] += msg, parent);
+	G->G->window->update_message(msg, parent);
+	if (m_delete(msg, "want_rfc822")) G->G->window->show_message(msg);
 }
 
 void response_folders(mapping conn, bytes line)
@@ -113,7 +116,13 @@ void fetch_message(string addr, string key)
 {
 	mapping conn = connections[addr];
 	if (!conn) return;
-	write("Fetching %O : %O\n", addr, key);
+	//The message SHOULD be in the cache, and SHOULD have a UID set.
+	mapping msg = conn->message_cache[key];
+	if (!msg || !msg->UID) return; //If it doesn't, we might have moved folders.
+	if (msg->RFC822) {G->G->window->show_message(msg); return;} //Already in cache
+	write("Fetching %O : %O [%d]\n", addr, key, msg->UID);
+	msg->want_rfc822 = 1;
+	send(conn, sprintf("a uid fetch %d (rfc822)\r\n", msg->UID));
 }
 
 //NOTE: Currently presumes ASCII for everything that matters.
