@@ -4,6 +4,14 @@ constant pos_key = "mainwindow";
 constant load_size = 1;
 object mainwindow;
 
+//Macro for GTK2.TreeViewColumn that allows multiple property/column pairs
+GTK2.TreeViewColumn GTK2TreeViewColumn(string|mapping title_or_props, GTK2.CellRenderer renderer, string property, int col, string|int ... attrs)
+{
+	object ret = GTK2.TreeViewColumn(title_or_props, renderer, property, col);
+	foreach (attrs/2, [string prop, int col]) ret->add_attribute(renderer, prop, col);
+	return ret;
+}
+
 void makewindow()
 {
 	win->menuitems = ([]);
@@ -20,16 +28,17 @@ void makewindow()
 			), 0, 0, 0)
 			->add(GTK2.ScrolledWindow()->set_policy(GTK2.POLICY_AUTOMATIC, GTK2.POLICY_AUTOMATIC)->add(
 				win->messageview = GTK2.TreeView(GTK2.TreeModelSort(
-					win->messages = GTK2.TreeStore(({"int", "string", "string", "string", "int"})))
+					win->messages = GTK2.TreeStore(({"int", "string", "string", "string", "int", "int"})))
 					->set_sort_column_id(4, 1)
 				)
 					//Hidden column: UID
-					->append_column(GTK2.TreeViewColumn("From", GTK2.CellRendererText(), "text", 1))
+					->append_column(GTK2TreeViewColumn("From", GTK2.CellRendererText(), "text", 1, "weight", 5))
 					//->append_column(GTK2.TreeViewColumn("To", GTK2.CellRendererText(), "text", 2))
-					->append_column(GTK2.TreeViewColumn("Subject", GTK2.CellRendererText(([
+					->append_column(GTK2TreeViewColumn("Subject", GTK2.CellRendererText(([
 						"ellipsize": GTK2.PANGO_ELLIPSIZE_END, "width-chars": 30
-					])), "text", 3))
+					])), "text", 3, "weight", 5))
 					//Hidden column: INTERNALDATE as a Unix time (0 for unknown)
+					//Hidden column: font weight (derived from read/unread status)
 			))
 		)
 	);
@@ -120,6 +129,7 @@ void update_message(mapping(string:mixed) msg, mapping(string:mixed)|void parent
 		shorten_address(msg->headers->to),
 		msg->headers->subject || "",
 		Calendar.dwim_time(msg->INTERNALDATE)->unix_time(),
+		has_value(msg->FLAGS, "\\Seen") ? GTK2.PANGO_WEIGHT_NORMAL : GTK2.PANGO_WEIGHT_BOLD,
 	}));
 }
 
