@@ -5,12 +5,14 @@ constant load_size = 1;
 object mainwindow;
 
 //Macro for GTK2.TreeViewColumn that allows multiple property/column pairs
+/* Not needed in 8.1 latest - use this if 8.0 compat is needed.
 GTK2.TreeViewColumn GTK2TreeViewColumn(string|mapping title_or_props, GTK2.CellRenderer renderer, string property, int col, string|int ... attrs)
 {
 	object ret = GTK2.TreeViewColumn(title_or_props, renderer, property, col);
 	foreach (attrs/2, [string prop, int col]) ret->add_attribute(renderer, prop, col);
 	return ret;
 }
+*/
 
 void makewindow()
 {
@@ -32,9 +34,9 @@ void makewindow()
 					->set_sort_column_id(4, 1)
 				)
 					//Hidden column: UID
-					->append_column(GTK2TreeViewColumn("From", GTK2.CellRendererText(), "text", 1, "weight", 5))
+					->append_column(GTK2.TreeViewColumn("From", GTK2.CellRendererText(), "text", 1, "weight", 5))
 					//->append_column(GTK2.TreeViewColumn("To", GTK2.CellRendererText(), "text", 2))
-					->append_column(GTK2TreeViewColumn("Subject", GTK2.CellRendererText(([
+					->append_column(GTK2.TreeViewColumn("Subject", GTK2.CellRendererText(([
 						"ellipsize": GTK2.PANGO_ELLIPSIZE_END, "width-chars": 30
 					])), "text", 3, "weight", 5))
 					//Hidden column: INTERNALDATE as a Unix time (0 for unknown)
