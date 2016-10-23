@@ -19,11 +19,15 @@ void makewindow()
 					//Hidden column: IMAP folder name. Consists of the full hierarchy, eg INBOX.Stuff.Old
 			), 0, 0, 0)
 			->add(GTK2.ScrolledWindow()->set_policy(GTK2.POLICY_AUTOMATIC, GTK2.POLICY_AUTOMATIC)->add(
-				win->messageview = GTK2.TreeView(win->messages = GTK2.TreeStore(({"int", "string", "string", "string"})))
+				win->messageview = GTK2.TreeView(GTK2.TreeModelSort(
+					win->messages = GTK2.TreeStore(({"int", "string", "string", "string", "int"})))
+					->set_sort_column_id(4, 1)
+				)
 					//Hidden column: UID
 					->append_column(GTK2.TreeViewColumn("From", GTK2.CellRendererText(), "text", 1))
 					//->append_column(GTK2.TreeViewColumn("To", GTK2.CellRendererText(), "text", 2))
 					->append_column(GTK2.TreeViewColumn("Subject", GTK2.CellRendererText(), "text", 3))
+					//Hidden column: INTERNALDATE as a Unix time (0 for unknown)
 			))
 		)
 	);
@@ -97,6 +101,7 @@ void update_message(mapping(string:mixed) msg)
 		msg->headers->from || "",
 		msg->headers->to || "",
 		msg->headers->subject || "",
+		Calendar.dwim_time(msg->INTERNALDATE)->unix_time(),
 	}));
 }
 
