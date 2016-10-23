@@ -32,6 +32,6 @@ int main(int argc,array(string) argv)
 {
 	add_constant("G", this);
 	G->argv = argv;
-	bootstrap_all();
+	if (bootstrap_all()) exit(1, "Startup failure - see above for details.\n");
 	return -1;
 }
