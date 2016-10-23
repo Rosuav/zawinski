@@ -88,7 +88,12 @@ void response_UNTAGGED_FETCH(mapping conn, bytes line)
 	mapping msg = (mapping)(info/2);
 	if (string h = msg["RFC822.HEADER"]) msg->headers = MIME.parse_headers(h)[0];
 	else msg->headers = (["Headers": "not available"]);
-	msg->key = msg->headers["message-id"] || msg->UID; //If there's no Message-ID header, use the UID number - it's valid for this mailbox.
+	//Ideally, we'd like message IDs to be globally unique and perfectly stable.
+	//If there's no Message-ID header, use the UID number - it's valid for this mailbox.
+	//In theory, a server could mess us around by sending distinct messages with the
+	//same ID. I don't know what the spec says about this, but it basically means a
+	//broken server.
+	msg->key = msg->headers["message-id"] || msg->UID;
 	G->G->window->update_message(conn->message_cache[msg->key] += msg);
 }
 
