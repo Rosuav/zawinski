@@ -143,6 +143,7 @@ void sig_folderview_cursor_changed(object self)
 	//Scan up to get to the top-level entry for this path
 	//We get the array of indices (the fundamental of the path), take just
 	//the first one, and construct a new path consisting of just that.
+	//NOTE: Doesn't seem to work with a sorted TreeView.
 	object toplevel = win->folders->get_iter(GTK2.TreePath((string)path->get_indices()[0]));
 	string addr = win->folders->get_value(toplevel, 0);
 	G->G->connection->select_folder(addr, folder);
