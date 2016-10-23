@@ -40,6 +40,7 @@ int sig_mainwindow_destroy() {exit(0);}
 object locate_account(string addr)
 {
 	//Is there a better way to do this than just linear searching??
+	//TODO: GTK2.TreeRowReference.
 	object iter = win->folders->get_iter_from_string("0");
 	if (!iter) return 0;
 	do
