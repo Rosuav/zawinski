@@ -86,9 +86,10 @@ void response_UNTAGGED_FETCH(mapping conn, bytes line)
 {
 	[int idx, array info] = parse_imap(conn, Stdio.Buffer("(" + line + ")"));
 	mapping msg = (mapping)(info/2);
-	if (!msg->UID) return; //We key everything on the UIDs.
 	if (string h = msg["RFC822.HEADER"]) msg->headers = MIME.parse_headers(h)[0];
-	G->G->window->update_message(conn->message_cache[msg->UID] += msg);
+	else msg->headers = (["Headers": "not available"]);
+	msg->key = msg->headers["message-id"] || msg->UID; //If there's no Message-ID header, use the UID number - it's valid for this mailbox.
+	G->G->window->update_message(conn->message_cache[msg->key] += msg);
 }
 
 void response_folders(mapping conn, bytes line)
