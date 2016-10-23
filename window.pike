@@ -145,7 +145,8 @@ void sig_folderview_cursor_changed(object self)
 	array info = win->folders->get_row(win->folders->get_iter(path));
 	//In theory, we could scan up to get to the top-level entry for this path.
 	//In practice, it's easier to retain that info as a hidden column.
-	G->G->connection->select_folder(info[2], info[1]);
+	//Is it safe to just save curaddr?? Are there race conditions possible??
+	G->G->connection->select_folder(win->curaddr=info[2], info[1]);
 }
 
 void sig_messageview_row_activated(object self, object path, object col)
@@ -153,6 +154,7 @@ void sig_messageview_row_activated(object self, object path, object col)
 	string key = win->messages->get_value(win->messages->get_iter(path), 6);
 	//1) Trigger an asynchronous download of this message
 	//2) Open up a new window when the result arrives.
+	G->G->connection->fetch_message(win->curaddr, key);
 }
 
 constant options_update = "Update code";
