@@ -101,9 +101,20 @@ void clear_messages()
 	win->messages->clear();
 }
 
-void show_message(mapping msg)
+class show_message(mapping msg)
 {
-	write("Show message: %O\n", msg->key);
+	inherit movablewindow;
+	constant is_subwindow = 0;
+	constant pos_key = "show_message";
+	constant load_size = 1;
+	void create() {::create("show_message");}
+	void makewindow()
+	{
+		win->mainwindow = GTK2.Window((["title": msg->headers->subject + " - Zawinski"]))->add(GTK2.Vbox(0, 0)
+			->add(GTK2.ScrolledWindow()->add(MultiLineEntryField()->set_text(msg->RFC822)))
+		);
+		::makewindow();
+	}
 }
 
 string shorten_address(string addr)
