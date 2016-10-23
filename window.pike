@@ -90,8 +90,11 @@ void clear_messages()
 
 string shorten_address(string addr)
 {
-	//TODO: Intelligently shorten a from/to address, eg take the name w/o email addr
-	return addr || "";
+	if (!addr) return "";
+	if (sscanf(addr, "\"%s\" <%*s>", string name) && name != "") return name;
+	if (sscanf(addr, "%s <%*s>", string name) && name != "") return name;
+	if (sscanf(addr, "%*s (%s)", string name) && name != "") return name;
+	return addr;
 }
 
 void update_message(mapping(string:mixed) msg, mapping(string:mixed)|void parent)
