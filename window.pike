@@ -98,9 +98,10 @@ void update_message(mapping(string:mixed) msg, mapping(string:mixed)|void parent
 	if (!msg->rowref || !msg->rowref->valid())
 	{
 		object ref = parent?->rowref;
-		object iter = win->messages->append(ref && ref->valid() &&
-			win->messages->get_iter(ref->get_path()));
+		mixed par = ref && ref->valid() && win->messages->get_iter(ref->get_path());
+		object iter = win->messages->append(par || UNDEFINED);
 		msg->rowref = GTK2.TreeRowReference(win->messages, win->messages->get_path(iter));
+		win->messageview->expand_all();
 	}
 	win->messages->set_row(win->messages->get_iter(msg->rowref->get_path()), ({
 		msg->UID,
