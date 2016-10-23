@@ -86,7 +86,7 @@ void clear_messages()
 	win->messages->clear();
 }
 
-void update_message(mapping(string:mixed) msg)
+void update_message(mapping(string:mixed) msg, mapping(string:mixed)|void parent)
 {
 	//TODO: Order by Calendar.dwim_time(msg->INTERNALDATE)->unix_time() descending
 	//TODO: Use msg->headers["message-id"] and msg->headers->references/" " to
@@ -95,9 +95,14 @@ void update_message(mapping(string:mixed) msg)
 	//the first level of messages. That would keep conversations together; within a
 	//thread, new messages would appear at the bottom, but new threads would appear
 	//at the top.
-	object iter = win->messages->append();
-	msg->rowref = GTK2.TreeRowReference(win->messages, win->messages->get_path(iter));
-	win->messages->set_row(iter, ({
+	if (!msg->rowref || !msg->rowref->valid())
+	{
+		object ref = parent?->rowref;
+		object iter = win->messages->append(ref && ref->valid() &&
+			win->messages->get_iter(ref->get_path()));
+		msg->rowref = GTK2.TreeRowReference(win->messages, win->messages->get_path(iter));
+	}
+	win->messages->set_row(win->messages->get_iter(msg->rowref->get_path()), ({
 		msg->UID,
 		msg->headers->from || "",
 		msg->headers->to || "",
