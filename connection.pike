@@ -86,6 +86,21 @@ void response_UNTAGGED_FETCH(mapping conn, bytes line)
 {
 	[int idx, array info] = parse_imap(conn, Stdio.Buffer("(" + line + ")"));
 	mapping msg = (mapping)(info/2);
+	if (!msg->UID)
+	{
+		//We've been sent some info without a UID in it.
+		//This can't be in response to an actual request (we'll always ask
+		//for the UID), so it most likely is a notification of changed flags.
+		//Rather than maintain a list of UIDs in sequential order, we just
+		//kick the request back to the server, asking for the UID too.
+		//Possible traffic optimization: This is most likely to be in
+		//response to another fetch (for the full body), which will have been
+		//sent to us immediately prior. We could retain the idx and UID of
+		//the one most recent untagged fetch, and assume that nothing's been
+		//expunged in between.
+		send(conn, sprintf("a fetch %d (UID%{ %s%})\r\n", idx, indices(msg)));
+		return;
+	}
 	msg = (conn->message_cache[msg->UID] += msg);
 	if (string h = msg["RFC822.HEADER"]) msg->headers = MIME.parse_headers(h)[0];
 	else msg->headers = (["Headers": "not available"]);
