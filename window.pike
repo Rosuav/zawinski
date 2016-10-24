@@ -30,7 +30,7 @@ void makewindow()
 					//Hidden column: Associated account ("addr")
 			), 0, 0, 0)
 			->add(GTK2.ScrolledWindow()->set_policy(GTK2.POLICY_AUTOMATIC, GTK2.POLICY_AUTOMATIC)->add(
-				win->messageview = GTK2.TreeView(GTK2.TreeModelSort(
+				win->messageview = GTK2.TreeView(win->messagesort = GTK2.TreeModelSort(
 					win->messages = GTK2.TreeStore(({"int", "string", "string", "string", "int", "int", "string"})))
 					->set_sort_column_id(4, 1)
 				)
@@ -167,7 +167,7 @@ void sig_folderview_cursor_changed(object self)
 
 void sig_messageview_row_activated(object self, object path, object col)
 {
-	string key = win->messages->get_value(win->messages->get_iter(path), 6);
+	string key = win->messages->get_value(win->messages->get_iter(win->messagesort->convert_path_to_child_path(path)), 6);
 	//1) Trigger an asynchronous download of this message
 	//2) Open up a new window when the result arrives.
 	G->G->connection->fetch_message(win->curaddr, key);
