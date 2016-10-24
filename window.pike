@@ -108,9 +108,60 @@ class show_message(mapping msg)
 	constant pos_key = "show_message";
 	constant load_size = 1;
 	void create() {::create("show_message");}
+
+	string display_one_email(array(string) address)
+	{
+		/* RFC 3501:
+		An address structure is a parenthesized list that describes an
+		electronic mail address.  The fields of an address structure
+		are in the following order: personal name, [SMTP]
+		at-domain-list (source route), mailbox name, and host name.
+		*/
+		[string name, string route, string mbox, string host] = address;
+		if (name && mbox && host) //Common case #1 (name and address)
+			return sprintf("%O <%s@%s>", name, mbox, host);
+		if (mbox && host) //Common case #2 (address w/o name)
+			return sprintf("<%s@%s>", mbox, host);
+		//Uncommon case: Some parts are missing.
+		return sprintf("%O %O <%s@%s>", name, route, mbox || "NULL", host || "NULL");
+	}
+	string display_emails(array(array(string)) addresses)
+	{
+		if (!addresses) return 0;
+		switch (sizeof(addresses))
+		{
+			case 0: return "(none)";
+			case 1: return display_one_email(addresses[0]);
+			case 2: case 3:
+				//For small numbers of addresses, show them all.
+				return display_one_email(addresses[*]) * ", ";
+			default:
+				//For large numbers of addresses, ellipsize.
+				//TODO: Return a widget and make it clickable.
+				return display_one_email(addresses[..3][*]) * ", " + ", ...";
+		}
+	}
+
 	void makewindow()
 	{
+		/* RFC 3501:
+		The fields of the envelope structure are in the following
+		order: date, subject, from, sender, reply-to, to, cc, bcc,
+		in-reply-to, and message-id.  The date, subject, in-reply-to,
+		and message-id fields are strings.  The from, sender, reply-to,
+		to, cc, and bcc fields are parenthesized lists of address
+		structures.
+		*/
+		mapping env = mkmapping("date subject from sender replyto to cc bcc inreplyto msgid"/" ", msg->ENVELOPE);
 		win->mainwindow = GTK2.Window((["title": msg->headers->subject + " - Zawinski"]))->add(GTK2.Vbox(0, 0)
+			->pack_start(GTK2Table(({
+				"From", display_emails(env->from),
+				"To", display_emails(env->to),
+				env->cc && "Cc", display_emails(env->cc),
+				env->bcc && "Bcc", display_emails(env->bcc), //Usually only on sent mail or drafts
+				"Subject", env->subject,
+				"Date", env->date,
+			})/2, (["xalign": 0.0])), 0, 0, 0)
 			->add(GTK2.ScrolledWindow()->add(MultiLineEntryField()->set_text(msg->body)))
 		);
 		::makewindow();
@@ -144,12 +195,15 @@ void update_message(mapping(string:mixed) msg, mapping(string:mixed)|void parent
 		msg->rowref = GTK2.TreeRowReference(win->messages, path);
 		win->messageview->expand_all()->scroll_to_cell(path);
 	}
+	//Note that most of this information could be obtained from msg->ENVELOPE, but
+	//the full RFC822 headers are necessary in order to get the parenting, so we
+	//fetch that and not the envelope.
 	win->messages->set_row(win->messages->get_iter(msg->rowref->get_path()), ({
 		msg->UID,
 		shorten_address(msg->headers->from),
 		shorten_address(msg->headers->to),
 		msg->headers->subject || "",
-		Calendar.dwim_time(msg->INTERNALDATE)->unix_time(),
+		msg->INTERNALDATE && Calendar.dwim_time(msg->INTERNALDATE)->unix_time(),
 		has_value(msg->FLAGS, "\\Seen") ? GTK2.PANGO_WEIGHT_NORMAL : GTK2.PANGO_WEIGHT_BOLD,
 		msg->key,
 	}));

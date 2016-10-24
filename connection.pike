@@ -77,7 +77,7 @@ mixed parse_imap(mapping conn, Stdio.Buffer buf)
 			//correctly reject the atom_specials).
 			string data = buf->match("%[^(){\1- *%]"); //Yes, that's "\1- " - control characters and space are forbidden
 			if (data == (string)(int)data) return (int)data; //Integer
-			return data; //Atom
+			return data != "NIL" && data; //Atom; NIL becomes 0.
 		}
 	}
 }
@@ -138,7 +138,7 @@ void fetch_message(string addr, string key)
 	if (msg->RFC822) {G->G->window->show_message(msg); return;} //Already in cache
 	write("Fetching %O : %O [%d]\n", addr, key, msg->UID);
 	msg->want_rfc822 = 1;
-	send(conn, sprintf("a uid fetch %d (rfc822)\r\n", msg->UID));
+	send(conn, sprintf("a uid fetch %d (rfc822 envelope)\r\n", msg->UID));
 }
 
 //NOTE: Currently presumes ASCII for everything that matters.
