@@ -102,7 +102,8 @@ void response_UNTAGGED_FETCH(mapping conn, bytes line)
 		return;
 	}
 	msg = (conn->message_cache[msg->UID] += msg);
-	if (string h = msg["RFC822.HEADER"]) msg->headers = MIME.parse_headers(h)[0];
+	if (string h = msg["RFC822"]) [msg->headers, msg->body] = MIME.parse_headers(h);
+	else if (string h = msg["RFC822.HEADER"]) msg->headers = MIME.parse_headers(h)[0];
 	else msg->headers = (["Headers": "not available"]);
 	//Ideally, we'd like message IDs to be globally unique and perfectly stable.
 	//If there's no Message-ID header, use the UID number - it's valid for this mailbox.

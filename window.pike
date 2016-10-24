@@ -111,7 +111,7 @@ class show_message(mapping msg)
 	void makewindow()
 	{
 		win->mainwindow = GTK2.Window((["title": msg->headers->subject + " - Zawinski"]))->add(GTK2.Vbox(0, 0)
-			->add(GTK2.ScrolledWindow()->add(MultiLineEntryField()->set_text(msg->RFC822)))
+			->add(GTK2.ScrolledWindow()->add(MultiLineEntryField()->set_text(msg->body)))
 		);
 		::makewindow();
 	}
