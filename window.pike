@@ -155,8 +155,8 @@ class show_message(mapping msg)
 		mapping env = mkmapping("date subject from sender replyto to cc bcc inreplyto msgid"/" ", msg->ENVELOPE);
 		win->mainwindow = GTK2.Window((["title": msg->headers->subject + " - Zawinski"]))->add(GTK2.Vbox(0, 0)
 			->pack_start(GTK2Table(({
-				"From", display_emails(env->from),
-				"To", display_emails(env->to),
+				env->from && "From", display_emails(env->from),
+				env->to && "To", display_emails(env->to),
 				env->cc && "Cc", display_emails(env->cc),
 				env->bcc && "Bcc", display_emails(env->bcc), //Usually only on sent mail or drafts
 				"Subject", env->subject,
