@@ -151,13 +151,11 @@ void fetch_message(string addr, string key)
 
 void mark_unread(string addr, string key)
 {
-	write("Mark unread: %O %O\n", addr, key);
 	mapping conn = connections[addr];
 	if (!conn) return;
 	//The message SHOULD be in the cache, and SHOULD have a UID set.
 	mapping msg = conn->message_cache[key];
 	if (!msg || !msg->UID) return; //If it doesn't, we might have moved folders.
-	write("Marking %d unread\n", msg->UID);
 	send(conn, sprintf("a uid store %d -flags (\\Seen)\r\n", msg->UID));
 }
 
