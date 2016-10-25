@@ -107,7 +107,7 @@ class show_message(mapping msg)
 	constant is_subwindow = 0;
 	constant pos_key = "show_message";
 	constant load_size = 1;
-	void create() {::create("show_message");}
+	void create() {::create();}
 
 	string display_one_email(array(string) address)
 	{
