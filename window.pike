@@ -173,6 +173,12 @@ class show_message(mapping msg)
 		);
 		::makewindow();
 	}
+
+	constant menu_message_unread = "Leave _Unread";
+	void message_unread()
+	{
+		write("TODO: Mark message unread (and close? or not?)\n");
+	}
 }
 
 string shorten_address(string addr)
