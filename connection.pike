@@ -135,7 +135,15 @@ void fetch_message(string addr, string key)
 	//The message SHOULD be in the cache, and SHOULD have a UID set.
 	mapping msg = conn->message_cache[key];
 	if (!msg || !msg->UID) return; //If it doesn't, we might have moved folders.
-	if (msg->RFC822) {G->G->window->show_message(addr, msg); return;} //Already in cache
+	if (msg->RFC822) //Already in cache
+	{
+		G->G->window->show_message(addr, msg);
+		//Fetching a message will normally mark it as \Seen.
+		//Fetching from the cache doesn't, so we explicitly say so.
+		if (!has_value(msg->FLAGS, "\\Seen"))
+			send(conn, sprintf("a uid store %d +flags (\\Seen)\r\n", msg->UID));
+		return;
+	}
 	write("Fetching %O : %O [%d]\n", addr, key, msg->UID);
 	msg->want_rfc822 = 1;
 	send(conn, sprintf("a uid fetch %d (rfc822 envelope)\r\n", msg->UID));
