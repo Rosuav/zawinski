@@ -154,6 +154,13 @@ class show_message(mapping msg)
 		*/
 		mapping env = mkmapping("date subject from sender replyto to cc bcc inreplyto msgid"/" ", msg->ENVELOPE);
 		win->mainwindow = GTK2.Window((["title": msg->headers->subject + " - Zawinski"]))->add(GTK2.Vbox(0, 0)
+			//TODO: Make this generic, eg: constant menu_bar = ({"_Message"});
+			//Remove '_' and lowercase, then look for menu_message_%s and a corresponding
+			//callable message_%s, and set up the events appropriately. Instead of using
+			//win->msgmenu, it'd simply have an array of menus.
+			->pack_start(GTK2.MenuBar()
+				->add(GTK2.MenuItem("_Message")->set_submenu(win->msgmenu = (object)GTK2.Menu()))
+			,0,0,0)
 			->pack_start(GTK2Table(({
 				env->from && "From", display_emails(env->from),
 				env->to && "To", display_emails(env->to),
