@@ -18,9 +18,7 @@ void makewindow()
 {
 	win->menuitems = ([]);
 	win->mainwindow = mainwindow = GTK2.Window((["title": "Zawinski"]))->add(GTK2.Vbox(0, 0)
-		->pack_start(GTK2.MenuBar()
-			->add(GTK2.MenuItem("_Options")->set_submenu(win->optmenu = (object)GTK2.Menu()))
-		,0,0,0)
+		->pack_start(stock_menu_bar("_Options"), 0, 0, 0)
 		->add(GTK2.Hbox(0, 0)
 			->pack_start(GTK2.ScrolledWindow()->set_policy(GTK2.POLICY_NEVER, GTK2.POLICY_AUTOMATIC)->add(
 				win->folderview = GTK2.TreeView(win->folders = GTK2.TreeStore(({"string", "string", "string"})))
@@ -234,8 +232,8 @@ void sig_messageview_row_activated(object self, object path, object col)
 	G->G->connection->fetch_message(win->curaddr, key);
 }
 
-constant options_update = "Update code";
-void opt_update()
+constant menu_options_update = "Update code";
+void options_update()
 {
 	int err = G->bootstrap_all();
 	if (!err) return; //All OK? Be silent.
@@ -244,8 +242,8 @@ void opt_update()
 	MessageBox(0, GTK2.MESSAGE_ERROR, GTK2.BUTTONS_OK, err + " compilation error(s) - see console", win->mainwindow);
 }
 
-constant options_accounts = "Configure accounts";
-class opt_accounts
+constant menu_options_accounts = "Configure accounts";
+class options_accounts
 {
 	inherit configdlg;
 	mapping(string:mixed) windowprops=(["title": "Configure mail accounts"]);
@@ -260,12 +258,4 @@ void create(string name)
 	if (G->G->window) mainwindow = G->G->window->mainwindow;
 	G->G->window = this;
 	::create(name);
-	foreach (sort(indices(this_program)), string attr) if (sscanf(attr, "options_%s", string opt) && this["opt_" + opt])
-	{
-		if (object old = win->menuitems[opt]) old->destroy();
-		object mi = GTK2.MenuItem(this[attr]);
-		win->optmenu->add(mi->show());
-		mi->signal_connect("activate", this["opt_" + opt]);
-		win->menuitems[opt] = mi;
-	}
 }
