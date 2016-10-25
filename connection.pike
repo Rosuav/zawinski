@@ -117,7 +117,7 @@ void response_UNTAGGED_FETCH(mapping conn, bytes line)
 		foreach (msg->headers->references/" ", string id)
 			parent = parent || conn->message_cache[id];
 	G->G->window->update_message(msg, parent);
-	if (m_delete(msg, "want_rfc822")) G->G->window->show_message(msg);
+	if (m_delete(msg, "want_rfc822")) G->G->window->show_message(conn->addr, msg);
 }
 
 void response_folders(mapping conn, bytes line)
@@ -135,10 +135,22 @@ void fetch_message(string addr, string key)
 	//The message SHOULD be in the cache, and SHOULD have a UID set.
 	mapping msg = conn->message_cache[key];
 	if (!msg || !msg->UID) return; //If it doesn't, we might have moved folders.
-	if (msg->RFC822) {G->G->window->show_message(msg); return;} //Already in cache
+	if (msg->RFC822) {G->G->window->show_message(addr, msg); return;} //Already in cache
 	write("Fetching %O : %O [%d]\n", addr, key, msg->UID);
 	msg->want_rfc822 = 1;
 	send(conn, sprintf("a uid fetch %d (rfc822 envelope)\r\n", msg->UID));
+}
+
+void mark_unread(string addr, string key)
+{
+	write("Mark unread: %O %O\n", addr, key);
+	mapping conn = connections[addr];
+	if (!conn) return;
+	//The message SHOULD be in the cache, and SHOULD have a UID set.
+	mapping msg = conn->message_cache[key];
+	if (!msg || !msg->UID) return; //If it doesn't, we might have moved folders.
+	write("Marking %d unread\n", msg->UID);
+	send(conn, sprintf("a uid store %d -flags (\\Seen)\r\n", msg->UID));
 }
 
 //NOTE: Currently presumes ASCII for everything that matters.

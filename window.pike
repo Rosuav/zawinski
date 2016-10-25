@@ -99,7 +99,7 @@ void clear_messages()
 	win->messages->clear();
 }
 
-class show_message(mapping msg)
+class show_message(string addr, mapping msg)
 {
 	inherit movablewindow;
 	constant is_subwindow = 0;
@@ -169,7 +169,9 @@ class show_message(mapping msg)
 	constant menu_message_unread = "Leave _Unread";
 	void message_unread()
 	{
-		write("TODO: Mark message unread (and close? or not?)\n");
+		//TODO: Should this close the window or not? Check with the Talldad.
+		G->G->connection->mark_unread(addr, msg->key);
+		closewindow();
 	}
 }
 
