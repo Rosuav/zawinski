@@ -106,6 +106,7 @@ class show_message(string addr, mapping msg)
 	constant pos_key = "show_message";
 	constant load_size = 1;
 	void create() {::create();}
+	MIME.Message plain, html; //0 if there is no part of that type
 
 	string display_one_email(array(string) address)
 	{
@@ -140,6 +141,25 @@ class show_message(string addr, mapping msg)
 		}
 	}
 
+	void find_text(MIME.Message mime)
+	{
+		//Look for text/html and text/plain and retain them.
+		switch (mime->type)
+		{
+			case "multipart":
+				//We have multiple parts. Recurse.
+				foreach (mime->body_parts, MIME.Message part) find_text(part);
+				break;
+			case "text":
+				if (mime->subtype == "plain") plain = mime;
+				if (mime->subtype == "html") html = mime;
+				break;
+			default:
+				//Could be an attachment or an inline image.
+				//Ignore for now.
+		}
+	}
+
 	void makewindow()
 	{
 		/* RFC 3501:
@@ -150,7 +170,14 @@ class show_message(string addr, mapping msg)
 		to, cc, and bcc fields are parenthesized lists of address
 		structures.
 		*/
-		object info = MIME.Message(String.trim_all_whites(msg->RFC822));
+		find_text(MIME.Message(String.trim_all_whites(msg->RFC822)));
+		//HACK: Test html-only or text-only with "plain=0;" or "html=0;"
+		//TODO: Make the plain-vs-html preference configurable
+		//MIME.Message showme = html || plain;
+		MIME.Message showme = plain || html;
+		//This will 99% of the time be equivalent to utf8_to_string(showme->getdata()),
+		//but we do the job properly. Might be worth optimizing for the ASCII case though.
+		string content = Charset.decoder(showme->charset)->feed(showme->getdata())->drain();
 		mapping env = mkmapping("date subject from sender replyto to cc bcc inreplyto msgid"/" ", msg->ENVELOPE);
 		win->mainwindow = GTK2.Window((["title": msg->headers->subject + " - Zawinski"]))->add(GTK2.Vbox(0, 0)
 			->pack_start(stock_menu_bar("_Message"), 0, 0, 0)
@@ -162,7 +189,7 @@ class show_message(string addr, mapping msg)
 				"Subject", env->subject,
 				"Date", env->date,
 			})/2, (["xalign": 0.0])), 0, 0, 0)
-			->add(GTK2.ScrolledWindow()->add(MultiLineEntryField()->set_text(msg->body)))
+			->add(GTK2.ScrolledWindow()->add(MultiLineEntryField()->set_text(content)))
 		);
 		::makewindow();
 	}
