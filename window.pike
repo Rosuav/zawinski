@@ -150,6 +150,7 @@ class show_message(string addr, mapping msg)
 		to, cc, and bcc fields are parenthesized lists of address
 		structures.
 		*/
+		object info = MIME.Message(String.trim_all_whites(msg->RFC822));
 		mapping env = mkmapping("date subject from sender replyto to cc bcc inreplyto msgid"/" ", msg->ENVELOPE);
 		win->mainwindow = GTK2.Window((["title": msg->headers->subject + " - Zawinski"]))->add(GTK2.Vbox(0, 0)
 			->pack_start(stock_menu_bar("_Message"), 0, 0, 0)
