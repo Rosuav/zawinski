@@ -175,6 +175,7 @@ class show_message(string addr, mapping msg)
 		//TODO: Make the plain-vs-html preference configurable
 		//MIME.Message showme = html || plain;
 		MIME.Message showme = plain || html;
+		if (!showme) error("No text/plain or text/html component in message, cannot display\n");
 		//This will 99% of the time be equivalent to utf8_to_string(showme->getdata()),
 		//but we do the job properly. Might be worth optimizing for the ASCII case though.
 		string content = Charset.decoder(showme->charset)->feed(showme->getdata())->drain();
