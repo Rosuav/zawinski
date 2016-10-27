@@ -160,6 +160,41 @@ class show_message(string addr, mapping msg)
 		}
 	}
 
+	void render_html(GTK2.TextView tv, string html)
+	{
+		//Instead of processing entities at the top level, it's simpler
+		//to process them separately, on data-only sections.
+		Parser.HTML entities = Parser.HTML()->add_entities(Parser.html_entities);
+		multiset(string) attributes = (<>);
+		GTK2.TextBuffer buf = tv->get_buffer();
+
+		mixed attribute(object p, mapping attrs, string tag)
+		{
+			write("tag %s: %O\n", tag, attrs);
+			if (tag[0] == '/') attributes[tag[1..]] = 0;
+			else attributes[tag] = 1;
+			return ({ });
+		}
+
+		mixed data(object p, string txt)
+		{
+			txt = string_to_utf8(String.trim_all_whites(entities->feed(txt)->read()));
+			if (txt != "") buf->insert_with_tags_by_name(buf->get_end_iter(), txt, sizeof(txt), (array)attributes);
+			return ({ });
+		}
+
+		object p = Parser.HTML();
+		array containers = "a b i"/" ";
+		foreach (containers, string tag)
+		{
+			buf->create_tag(tag, (["background": random(({"red", "blue", "green", "yellow"}))]));
+			p->add_tag(tag, ({attribute, tag}));
+			p->add_tag("/"+tag, ({attribute, "/"+tag}));
+		}
+		p->_set_data_callback(data);
+		p->finish(html);
+	}
+
 	void makewindow()
 	{
 		/* RFC 3501:
@@ -173,8 +208,8 @@ class show_message(string addr, mapping msg)
 		find_text(MIME.Message(String.trim_all_whites(msg->RFC822)));
 		//HACK: Test html-only or text-only with "plain=0;" or "html=0;"
 		//TODO: Make the plain-vs-html preference configurable
-		//MIME.Message showme = html || plain;
-		MIME.Message showme = plain || html;
+		MIME.Message showme = html || plain;
+		//MIME.Message showme = plain || html;
 		if (!showme) error("No text/plain or text/html component in message, cannot display\n");
 		//This will 99% of the time be equivalent to utf8_to_string(showme->getdata()),
 		//but we do the job properly. Might be worth optimizing for the ASCII case though.
@@ -190,8 +225,10 @@ class show_message(string addr, mapping msg)
 				"Subject", env->subject,
 				"Date", env->date,
 			})/2, (["xalign": 0.0])), 0, 0, 0)
-			->add(GTK2.ScrolledWindow()->add(MultiLineEntryField()->set_text(content)))
+			->add(GTK2.ScrolledWindow()->add(win->display=MultiLineEntryField()))
 		);
+		if (showme->subtype == "plain") win->display->set_text(content);
+		else render_html(win->display, content);
 		::makewindow();
 	}
 
