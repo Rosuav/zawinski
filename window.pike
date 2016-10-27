@@ -178,8 +178,15 @@ class show_message(string addr, mapping msg)
 
 		mixed data(object p, string txt)
 		{
+			//TODO: Collapse all whitespace into a single space, instead of trimming externals only
 			txt = string_to_utf8(String.trim_all_whites(entities->feed(txt)->read()));
 			if (txt != "") buf->insert_with_tags_by_name(buf->get_end_iter(), txt, sizeof(txt), (array)attributes);
+			return ({ });
+		}
+
+		mixed linebreak(object p, mapping attrs)
+		{
+			buf->insert_with_tags_by_name(buf->get_end_iter(), "\n\n", 2, (array)attributes);
 			return ({ });
 		}
 
@@ -191,6 +198,8 @@ class show_message(string addr, mapping msg)
 			p->add_tag(tag, ({attribute, tag}));
 			p->add_tag("/"+tag, ({attribute, "/"+tag}));
 		}
+		foreach ("p br div"/" ", string tag)
+			p->add_tag(tag, linebreak);
 		p->_set_data_callback(data);
 		p->finish(html);
 	}
