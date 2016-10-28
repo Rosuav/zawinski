@@ -239,7 +239,8 @@ class show_message(string addr, mapping msg)
 				"Subject", env->subject,
 				"Date", env->date,
 			})/2, (["xalign": 0.0])), 0, 0, 0)
-			->add(GTK2.ScrolledWindow()->add(win->display=MultiLineEntryField()))
+			->add(GTK2.ScrolledWindow()->add(win->display=MultiLineEntryField()
+				->set_editable(0)->set_wrap_mode(GTK2.WRAP_WORD_CHAR)))
 		);
 		if (showme->subtype == "plain") win->display->set_text(content);
 		else render_html(win->display, content);
