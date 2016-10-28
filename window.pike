@@ -14,6 +14,12 @@ GTK2.TreeViewColumn GTK2TreeViewColumn(string|mapping title_or_props, GTK2.CellR
 }
 */
 
+constant html_tags = ([
+	"b": (["weight": GTK2.PANGO_WEIGHT_BOLD]),
+	"i": (["style": GTK2.PANGO_STYLE_ITALIC]),
+	"a": (["foreground": "blue", "underline": GTK2.PANGO_UNDERLINE_SINGLE]),
+]);
+
 void makewindow()
 {
 	win->menuitems = ([]);
@@ -191,10 +197,9 @@ class show_message(string addr, mapping msg)
 		}
 
 		object p = Parser.HTML();
-		array containers = "a b i"/" ";
-		foreach (containers, string tag)
+		foreach (html_tags; string tag; mapping styles)
 		{
-			buf->create_tag(tag, (["background": random(({"red", "blue", "green", "yellow"}))]));
+			buf->create_tag(tag, styles);
 			p->add_tag(tag, ({attribute, tag}));
 			p->add_tag("/"+tag, ({attribute, "/"+tag}));
 		}
