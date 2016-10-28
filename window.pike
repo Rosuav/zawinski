@@ -20,6 +20,8 @@ constant html_tags = ([
 	"a": (["foreground": "blue", "underline": GTK2.PANGO_UNDERLINE_SINGLE]),
 ]);
 
+Regexp.SimpleRegexp whites = Regexp.SimpleRegexp("[ \n]+");
+
 void makewindow()
 {
 	win->menuitems = ([]);
@@ -184,8 +186,8 @@ class show_message(string addr, mapping msg)
 
 		mixed data(object p, string txt)
 		{
-			//TODO: Collapse all whitespace into a single space, instead of trimming externals only
-			txt = string_to_utf8(String.trim_all_whites(entities->feed(txt)->read()));
+			//Collapse all whitespace into a single space
+			txt = whites->replace(string_to_utf8(entities->feed(txt)->read()), " ");
 			if (txt != "") buf->insert_with_tags_by_name(buf->get_end_iter(), txt, sizeof(txt), (array)attributes);
 			return ({ });
 		}
