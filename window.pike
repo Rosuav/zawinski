@@ -175,6 +175,7 @@ class show_message(string addr, mapping msg)
 		Parser.HTML entities = Parser.HTML()->add_entities(Parser.html_entities);
 		multiset(string) attributes = (<>);
 		GTK2.TextBuffer buf = tv->get_buffer();
+		int softspace = 0;
 
 		mixed attribute(object p, mapping attrs, string tag)
 		{
@@ -188,6 +189,10 @@ class show_message(string addr, mapping msg)
 		{
 			//Collapse all whitespace into a single space
 			txt = whites->replace(string_to_utf8(entities->feed(txt)->read()), " ");
+			if (has_prefix(txt, " ")) txt = txt[1..];
+			if (softspace) txt = " " + txt;
+			softspace = has_suffix(txt, " ");
+			if (softspace) txt = txt[..<1];
 			if (txt != "") buf->insert_with_tags_by_name(buf->get_end_iter(), txt, sizeof(txt), (array)attributes);
 			return ({ });
 		}
@@ -195,6 +200,7 @@ class show_message(string addr, mapping msg)
 		mixed linebreak(object p, mapping attrs)
 		{
 			buf->insert_with_tags_by_name(buf->get_end_iter(), "\n\n", 2, (array)attributes);
+			softspace = 0; //After a block-level tag, loose whitespace is suppressed.
 			return ({ });
 		}
 
