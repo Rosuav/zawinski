@@ -43,6 +43,27 @@ void response_UNTAGGED_LIST(mapping conn, bytes line)
 	if (conn->folders) conn->folders[fld] = 1;
 }
 
+string decode_encoded_words(string val)
+{
+	//Process any encoding markers in a string, eg a header.
+	//Note that this should be processed as a single blank-delimited atom.
+	//We don't currently enforce this.
+	sscanf(val, "%s=?%s?%s?%s?=%s", string before, string charset, string enc, string txt, string after);
+	if (!after) return val;
+	switch (lower_case(enc))
+	{
+		case "b": //Base 64
+			txt = MIME.decode_base64(txt);
+			break;
+		case "q": //Quoted-Printable
+			txt = MIME.decode_qp(txt);
+			break;
+		default: return val; //Unknown encoding.
+	}
+	catch {return before + Charset.decoder(charset)->feed(txt)->drain() + decode_encoded_words(after);};
+	return val; //If something goes wrong, return it as-is.
+}
+
 mixed parse_imap(mapping conn, Stdio.Buffer buf)
 {
 	if (!sizeof(buf)) return UNDEFINED; //Shouldn't happen.
@@ -63,7 +84,7 @@ mixed parse_imap(mapping conn, Stdio.Buffer buf)
 		}
 		case '"':
 			//Quoted string
-			return buf->match("%O");
+			return decode_encoded_words(buf->match("%O"));
 		case '\0':
 		{
 			//String literal marker
@@ -77,7 +98,7 @@ mixed parse_imap(mapping conn, Stdio.Buffer buf)
 			//correctly reject the atom_specials).
 			string data = buf->match("%[^(){\1- *%]"); //Yes, that's "\1- " - control characters and space are forbidden
 			if (data == (string)(int)data) return (int)data; //Integer
-			return data != "NIL" && data; //Atom; NIL becomes 0.
+			return data != "NIL" && decode_encoded_words(data); //Atom; NIL becomes 0.
 		}
 	}
 }
@@ -102,9 +123,17 @@ void response_UNTAGGED_FETCH(mapping conn, bytes line)
 		return;
 	}
 	msg = (conn->message_cache[msg->UID] += msg);
-	if (string h = msg["RFC822"]) [msg->headers, msg->body] = MIME.parse_headers(h);
-	else if (string h = msg["RFC822.HEADER"]) msg->headers = MIME.parse_headers(h)[0];
-	else msg->headers = (["Headers": "not available"]);
+	if (!msg->headers)
+	{
+		mapping hdr;
+		if (string h = msg["RFC822"]) [hdr, msg->body] = MIME.parse_headers(h);
+		else if (string h = msg["RFC822.HEADER"]) hdr = MIME.parse_headers(h)[0];
+		else hdr = (["Headers": "not available"]);
+		foreach (hdr; string h; mixed val)
+			if (stringp(val))
+				hdr[h] = decode_encoded_words(val);
+		msg->headers = hdr;
+	}
 	//Ideally, we'd like message IDs to be globally unique and perfectly stable.
 	//If there's no Message-ID header, use the UID number - it's valid for this mailbox.
 	//In theory, a server could mess us around by sending distinct messages with the
