@@ -199,9 +199,10 @@ class show_message(string addr, mapping msg)
 			return ({ });
 		}
 
-		mixed linebreak(object p, mapping attrs)
+		mixed linebreak(object p, mapping attrs, int count)
 		{
-			buf->insert_with_tags_by_name(buf->get_end_iter(), "\n\n", 2, (array)attributes);
+			//count is normally 2, but is 1 for <br>
+			buf->insert_with_tags_by_name(buf->get_end_iter(), "\n" * count, count, (array)attributes);
 			softspace = 0; //After a block-level tag, loose whitespace is suppressed.
 			return ({ });
 		}
@@ -213,10 +214,12 @@ class show_message(string addr, mapping msg)
 			p->add_tag(tag, ({attribute, tag}));
 			p->add_tag("/"+tag, ({attribute, "/"+tag}));
 		}
-		foreach ("p br div"/" ", string tag)
-			p->add_tag(tag, linebreak);
+		foreach ("p div section header footer article aside address"/" ", string tag)
+			p->add_tag(tag, ({linebreak, 2}));
+		p->add_tag("br", ({linebreak, 1}));
 		p->_set_data_callback(data);
 		p->finish(html);
+		buf->insert(buf->get_end_iter(), "\n", 1);
 	}
 
 	void makewindow()
