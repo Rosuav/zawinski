@@ -170,6 +170,13 @@ class show_message(string addr, mapping msg)
 
 	void render_html(GTK2.TextView tv, string html)
 	{
+		/* TODO:
+		 * Hovering over links should change mouse cursor
+		 * Make links clickable
+		 * Inline images from attachments and/or data: URLs
+		 * Inline images from the web, if and only if the user allows it
+		 * Better handling of nested <div>s - currently each one makes \n\n
+		 */
 		//Instead of processing entities at the top level, it's simpler
 		//to process them separately, on data-only sections.
 		Parser.HTML entities = Parser.HTML()->add_entities(Parser.html_entities);
