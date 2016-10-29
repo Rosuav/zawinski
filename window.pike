@@ -186,7 +186,7 @@ class show_message(string addr, mapping msg)
 
 		mixed attribute(object p, mapping attrs, string tag)
 		{
-			write("tag %s: %O\n", tag, attrs);
+			//write("tag %s: %O\n", tag, attrs);
 			if (tag[0] == '/') attributes[tag[1..]] = 0;
 			else attributes[tag] = 1;
 			return ({ });
