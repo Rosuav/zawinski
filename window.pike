@@ -240,6 +240,7 @@ class show_message(string addr, mapping msg)
 		to, cc, and bcc fields are parenthesized lists of address
 		structures.
 		*/
+		//Stdio.write_file("RFC822", msg->RFC822);
 		find_text(MIME.Message(String.trim_all_whites(msg->RFC822)));
 		//HACK: Test html-only or text-only with "plain=0;" or "html=0;"
 		//TODO: Make the plain-vs-html preference configurable
@@ -249,6 +250,7 @@ class show_message(string addr, mapping msg)
 		//This will 99% of the time be equivalent to utf8_to_string(showme->getdata()),
 		//but we do the job properly. Might be worth optimizing for the ASCII case though.
 		string content = Charset.decoder(showme->charset)->feed(showme->getdata())->drain();
+		//Stdio.write_file("HTML", string_to_utf8(content));
 		mapping env = mkmapping("date subject from sender replyto to cc bcc inreplyto msgid"/" ", msg->ENVELOPE);
 		win->mainwindow = GTK2.Window((["title": msg->headers->subject + " - Zawinski"]))->add(GTK2.Vbox(0, 0)
 			->pack_start(stock_menu_bar("_Message"), 0, 0, 0)
@@ -356,6 +358,10 @@ class options_accounts
 	void save_content() {call_out(G->G->connection->connect, 0);}
 	void delete_content() {call_out(G->G->connection->connect, 0);}
 }
+
+//TODO: Do this on a timer instead, controlled entirely within connection.pike
+constant menu_options_checkmail = "Check for new mail";
+void options_checkmail() {G->G->connection->poll();}
 
 void create(string name)
 {

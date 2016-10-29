@@ -1,5 +1,11 @@
 mapping(string:mixed) connections = ([]);
 
+void poll()
+{
+	foreach (connections; string addr; mapping conn)
+		send(conn, "a noop\r\n");
+}
+
 //Call this to update the folder list. Currently happens on login;
 //can also be called in response to a user-initiated refresh, on a
 //timer, or after getting some sort of folder error.
