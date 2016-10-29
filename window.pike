@@ -182,7 +182,7 @@ class show_message(string addr, mapping msg)
 		/* TODO:
 		 * Hovering over links should change mouse cursor
 		 * Make links clickable
-		 * Inline images from attachments and/or data: URLs
+		 * Inline images from "data:" URLs
 		 * Inline images from the web, if and only if the user allows it
 		 * Better handling of nested <div>s - currently each one makes \n\n
 		 */
@@ -225,7 +225,6 @@ class show_message(string addr, mapping msg)
 
 		mixed image(object p, mapping attrs)
 		{
-			write("Image: %O\n", attrs);
 			if (sscanf(attrs->src || "", "cid:%s", string cid) && cid)
 			{
 				string img = images["<"+cid+">"];
