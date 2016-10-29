@@ -25,6 +25,9 @@ Regexp.SimpleRegexp whites = Regexp.SimpleRegexp("[ \n]+");
 void makewindow()
 {
 	win->menuitems = ([]);
+	mapping short = ([ //Properties used on short fields
+		"ellipsize": GTK2.PANGO_ELLIPSIZE_END, "width-chars": 30
+	]);
 	win->mainwindow = mainwindow = GTK2.Window((["title": "Zawinski"]))->add(GTK2.Vbox(0, 0)
 		->pack_start(stock_menu_bar("_Options"), 0, 0, 0)
 		->add(GTK2.Hbox(0, 0)
@@ -41,11 +44,9 @@ void makewindow()
 					->set_sort_column_id(4, 1)
 				)
 					//Hidden column: UID
-					->append_column(GTK2.TreeViewColumn("From", GTK2.CellRendererText(), "text", 1, "weight", 5))
+					->append_column(GTK2.TreeViewColumn("From", GTK2.CellRendererText(short), "text", 1, "weight", 5))
 					//->append_column(GTK2.TreeViewColumn("To", GTK2.CellRendererText(), "text", 2))
-					->append_column(GTK2.TreeViewColumn("Subject", GTK2.CellRendererText(([
-						"ellipsize": GTK2.PANGO_ELLIPSIZE_END, "width-chars": 30
-					])), "text", 3, "weight", 5))
+					->append_column(GTK2.TreeViewColumn("Subject", GTK2.CellRendererText(short), "text", 3, "weight", 5))
 					//Hidden column: INTERNALDATE as a Unix time (0 for unknown)
 					//Hidden column: font weight (derived from read/unread status)
 					//Hidden column: lookup key
