@@ -116,6 +116,7 @@ class show_message(string addr, mapping msg)
 	constant load_size = 1;
 	void create() {::create();}
 	MIME.Message plain, html; //0 if there is no part of that type
+	mapping(string:string) images = ([]); //Inline images, keyed by their Content-ID headers
 
 	string display_one_email(array(string) address)
 	{
@@ -163,9 +164,16 @@ class show_message(string addr, mapping msg)
 				if (mime->subtype == "plain") plain = mime;
 				if (mime->subtype == "html") html = mime;
 				break;
+			case "image":
+			{
+				string cid = mime->headers["content-id"];
+				if (cid) images[cid] = mime->getdata();
+				break;
+			}
 			default:
-				//Could be an attachment or an inline image.
+				//Could be an attachment.
 				//Ignore for now.
+				write("Attachment? %s/%s %O\n", mime->type, mime->subtype, mime);
 		}
 	}
 
@@ -215,6 +223,19 @@ class show_message(string addr, mapping msg)
 			return ({ });
 		}
 
+		mixed image(object p, mapping attrs)
+		{
+			write("Image: %O\n", attrs);
+			if (sscanf(attrs->src || "", "cid:%s", string cid) && cid)
+			{
+				string img = images["<"+cid+">"];
+				if (!img) return ({ });
+				object pixbuf = GTK2.GdkPixbuf((["data": img]));
+				buf->insert_pixbuf(buf->get_end_iter(), pixbuf);
+			}
+			return ({ });
+		}
+
 		object p = Parser.HTML();
 		foreach (html_tags; string tag; mapping styles)
 		{
@@ -225,6 +246,7 @@ class show_message(string addr, mapping msg)
 		foreach ("p div section header footer article aside address"/" ", string tag)
 			p->add_tag(tag, ({linebreak, 2}));
 		p->add_tag("br", ({linebreak, 1}));
+		p->add_tag("img", image);
 		p->_set_data_callback(data);
 		p->finish(html);
 		buf->insert(buf->get_end_iter(), "\n", 1);
