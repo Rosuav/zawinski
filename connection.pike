@@ -209,6 +209,7 @@ void sockread(mapping conn, bytes data)
 	}
 	while (sscanf(conn->readbuffer, "%s %s\n%s", ascii msg, bytes line, conn->readbuffer))
 	{
+		if (!line) break; //Unable to parse? Go back and wait for more from the socket.
 		line = String.trim_all_whites(line); //Will trim off the \r that ought to end the line
 		if (line == "") continue;
 		if (line[-1] == '}')
