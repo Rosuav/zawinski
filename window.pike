@@ -284,7 +284,7 @@ class show_message(string addr, mapping msg)
 				env->bcc && "Bcc", display_emails(env->bcc), //Usually only on sent mail or drafts
 				"Subject", env->subject,
 				"Date", env->date,
-			})/2, (["xalign": 0.0])), 0, 0, 0)
+			})/2, (["xalign": 0.0]))->set_col_spacings(15), 0, 0, 0)
 			->add(GTK2.ScrolledWindow()->add(win->display=MultiLineEntryField()
 				->set_editable(0)->set_wrap_mode(GTK2.WRAP_WORD_CHAR)))
 		);
