@@ -69,7 +69,7 @@ mixed parse_imap(mapping conn, Stdio.Buffer buf)
 		}
 		case '"':
 			//Quoted string
-			return MIME.decode_words_text_remapped(buf->match("%O"));
+			return buf->match("%O");
 		case '\0':
 		{
 			//String literal marker
@@ -83,9 +83,16 @@ mixed parse_imap(mapping conn, Stdio.Buffer buf)
 			//correctly reject the atom_specials).
 			string data = buf->match("%[^(){\1- *%]"); //Yes, that's "\1- " - control characters and space are forbidden
 			if (data == (string)(int)data) return (int)data; //Integer
-			return data != "NIL" && MIME.decode_words_text_remapped(data); //Atom; NIL becomes 0.
+			return data != "NIL" && data; //Atom; NIL becomes 0.
 		}
 	}
+}
+
+//Recursively RFC-1522-decode an array of text, arbitrarily nested.
+string|array|int(0..0) decode_all(string|array|int(0..0) txt)
+{
+	if (stringp(txt)) return MIME.decode_words_text_remapped(txt);
+	return txt && decode_all(txt[*]);
 }
 
 void response_UNTAGGED_FETCH(mapping conn, bytes line)
@@ -107,16 +114,14 @@ void response_UNTAGGED_FETCH(mapping conn, bytes line)
 		send(conn, sprintf("a fetch %d (UID%{ %s%})\r\n", idx, indices(msg)));
 		return;
 	}
+	if (msg->ENVELOPE) msg->ENVELOPE = decode_all(msg->ENVELOPE);
 	msg = (conn->message_cache[msg->UID] += msg);
 	if (!msg->headers)
 	{
 		mapping hdr;
-		if (string h = msg["RFC822"]) [hdr, msg->body] = MIME.parse_headers(h);
-		else if (string h = msg["RFC822.HEADER"]) hdr = MIME.parse_headers(h)[0];
+		if (string h = msg["RFC822"]) [hdr, msg->body] = MIME.parse_headers(h, UNDEFINED, 1);
+		else if (string h = msg["RFC822.HEADER"]) hdr = MIME.parse_headers(h, UNDEFINED, 1)[0];
 		else hdr = (["Headers": "not available"]);
-		foreach (hdr; string h; mixed val)
-			if (stringp(val))
-				hdr[h] = MIME.decode_words_text_remapped(val);
 		msg->headers = hdr;
 	}
 	//Ideally, we'd like message IDs to be globally unique and perfectly stable.
