@@ -115,7 +115,7 @@ class show_message(string addr, mapping msg)
 	constant pos_key = "show_message";
 	constant load_size = 1;
 	void create() {::create();}
-	MIME.UnicodeMessage plain, html; //0 if there is no part of that type
+	MIME.Message plain, html; //0 if there is no part of that type
 	mapping(string:string) images = ([]); //Inline images, keyed by their Content-ID headers
 
 	string display_one_email(array(string) address)
@@ -151,14 +151,14 @@ class show_message(string addr, mapping msg)
 		}
 	}
 
-	void find_text(MIME.UnicodeMessage mime)
+	void find_text(MIME.Message mime)
 	{
 		//Look for text/html and text/plain and retain them.
 		switch (mime->type)
 		{
 			case "multipart":
 				//We have multiple parts. Recurse.
-				foreach (mime->body_parts, MIME.UnicodeMessage part) find_text(part);
+				foreach (mime->body_parts, MIME.Message part) find_text(part);
 				break;
 			case "text":
 				if (mime->subtype == "plain") plain = mime;
@@ -267,13 +267,16 @@ class show_message(string addr, mapping msg)
 		structures.
 		*/
 		//Stdio.write_file("RFC822", msg->RFC822);
-		find_text(MIME.UnicodeMessage(String.trim_all_whites(msg->RFC822)));
+		find_text(MIME.Message(String.trim_all_whites(msg->RFC822)));
 		//HACK: Test html-only or text-only with "plain=0;" or "html=0;"
 		//TODO: Make the plain-vs-html preference configurable
-		MIME.UnicodeMessage showme = html || plain;
-		//MIME.UnicodeMessage showme = plain || html;
+		MIME.Message showme = html || plain;
+		//MIME.Message showme = plain || html;
 		if (!showme) error("No text/plain or text/html component in message, cannot display\n");
-		//Stdio.write_file("HTML", string_to_utf8(showme->data));
+		//This will 99% of the time be equivalent to utf8_to_string(showme->getdata()),
+		//but we do the job properly. Might be worth optimizing for the ASCII case though.
+		string content = Charset.decoder(showme->charset)->feed(showme->getdata())->drain();
+		//Stdio.write_file("HTML", string_to_utf8(content));
 		mapping env = mkmapping("date subject from sender replyto to cc bcc inreplyto msgid"/" ", msg->ENVELOPE);
 		win->mainwindow = GTK2.Window((["title": msg->headers->subject + " - Zawinski"]))->add(GTK2.Vbox(0, 0)
 			->pack_start(stock_menu_bar("_Message"), 0, 0, 0)
@@ -288,8 +291,8 @@ class show_message(string addr, mapping msg)
 			->add(GTK2.ScrolledWindow()->add(win->display=MultiLineEntryField()
 				->set_editable(0)->set_wrap_mode(GTK2.WRAP_WORD_CHAR)))
 		);
-		if (showme->subtype == "plain") win->display->set_text(showme->data);
-		else render_html(win->display, showme->data);
+		if (showme->subtype == "plain") win->display->set_text(content);
+		else render_html(win->display, content);
 		::makewindow();
 	}
 

@@ -119,9 +119,11 @@ void response_UNTAGGED_FETCH(mapping conn, bytes line)
 	if (!msg->headers)
 	{
 		mapping hdr;
-		if (string h = msg["RFC822"]) [hdr, msg->body] = MIME.parse_headers(h, UNDEFINED, 1);
-		else if (string h = msg["RFC822.HEADER"]) hdr = MIME.parse_headers(h, UNDEFINED, 1)[0];
+		if (string h = msg["RFC822"]) [hdr, msg->body] = MIME.parse_headers(h, UNDEFINED);
+		else if (string h = msg["RFC822.HEADER"]) hdr = MIME.parse_headers(h, UNDEFINED)[0];
 		else hdr = (["Headers": "not available"]);
+		foreach ("from to subject"/" ", string h)
+			hdr[h] = MIME.decode_words_text_remapped(hdr[h]);
 		msg->headers = hdr;
 	}
 	//Ideally, we'd like message IDs to be globally unique and perfectly stable.
