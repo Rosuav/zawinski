@@ -23,6 +23,11 @@ as stand-alone entities (classic style), or as some kind of tree (Mailman style)
 A tree could cost a lot in performance (have to load all messages), and might
 complicate the sorting.
 
+NOTE: This requires a *very* recent build of Pike. Changes have been made in the
+core language to support functionality needed (or wanted) by Zawinski. Use 8.1,
+and make sure your Pike version is at least as new as your Zawinski. (One day,
+these changes will be in the stable builds, but they'll still be called 8.1 or
+better. So assume that anything older than 8.1 won't work.)
 
 License: MIT
 
