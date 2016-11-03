@@ -28,7 +28,7 @@ void makewindow()
 	mapping short = ([ //Properties used on short fields
 		"ellipsize": GTK2.PANGO_ELLIPSIZE_END, "width-chars": 30
 	]);
-	array drag_targets = ({ ({ "RFC822", GTK2.TARGET_SAME_APP, 822}) });
+	array drag_targets = ({ ({ "message/rfc822", GTK2.TARGET_SAME_APP, 822}) });
 	win->mainwindow = mainwindow = GTK2.Window((["title": "Zawinski"]))->add(GTK2.Vbox(0, 0)
 		->pack_start(stock_menu_bar("_Options"), 0, 0, 0)
 		->add(GTK2.Hbox(0, 0)
@@ -67,6 +67,7 @@ void sig_messageview_drag_data_get(GTK2.Widget self, GDK2.DragContext drag_conte
 	[GTK2.TreeIter iter, GTK2.TreeModel list_store] = self->get_selection()->get_selected();
 	string key = win->messages->get_value(win->messagesort->convert_iter_to_child_iter(iter), 6);
 	sdata->set_text(key);
+	write("Sending message %O\n", key);
 }
 
 void sig_folderview_drag_data_received(GTK2.Widget self, GDK2.DragContext drag_context,
