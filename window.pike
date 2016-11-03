@@ -28,12 +28,14 @@ void makewindow()
 	mapping short = ([ //Properties used on short fields
 		"ellipsize": GTK2.PANGO_ELLIPSIZE_END, "width-chars": 30
 	]);
+	array drag_targets = ({ ({ "RFC822", GTK2.TARGET_SAME_APP, 822}) });
 	win->mainwindow = mainwindow = GTK2.Window((["title": "Zawinski"]))->add(GTK2.Vbox(0, 0)
 		->pack_start(stock_menu_bar("_Options"), 0, 0, 0)
 		->add(GTK2.Hbox(0, 0)
 			->pack_start(GTK2.ScrolledWindow()->set_policy(GTK2.POLICY_NEVER, GTK2.POLICY_AUTOMATIC)->add(
 				win->folderview = GTK2.TreeView(win->folders = GTK2.TreeStore(({"string", "string", "string"})))
 					->set_headers_visible(0)
+					->drag_dest_set(GTK2.DEST_DEFAULT_ALL, drag_targets, GTK2.GDK_ACTION_MOVE)
 					->append_column(GTK2.TreeViewColumn("Folder", GTK2.CellRendererText(), "text", 0))
 					//Hidden column: IMAP folder name. Consists of the full hierarchy, eg INBOX.Stuff.Old
 					//Hidden column: Associated account ("addr")
@@ -43,6 +45,7 @@ void makewindow()
 					win->messages = GTK2.TreeStore(({"int", "string", "string", "string", "int", "int", "string"})))
 					->set_sort_column_id(4, 1)
 				)
+					->drag_source_set(GTK2.GDK_BUTTON1_MASK|GTK2.GDK_BUTTON2_MASK, drag_targets, GTK2.GDK_ACTION_MOVE)
 					//Hidden column: UID
 					->append_column(GTK2.TreeViewColumn("From", GTK2.CellRendererText(short), "text", 1, "weight", 5))
 					//->append_column(GTK2.TreeViewColumn("To", GTK2.CellRendererText(), "text", 2))
@@ -57,6 +60,20 @@ void makewindow()
 }
 
 int sig_mainwindow_destroy() {exit(0);}
+
+void sig_messageview_drag_data_get(GTK2.Widget self, GDK2.DragContext drag_context,
+	GTK2.SelectionData sdata, int info, int time)
+{
+	[GTK2.TreeIter iter, GTK2.TreeModel list_store] = self->get_selection()->get_selected();
+	string key = win->messages->get_value(win->messagesort->convert_iter_to_child_iter(iter), 6);
+	sdata->set_text(key);
+}
+
+void sig_folderview_drag_data_received(GTK2.Widget self, GDK2.DragContext drag_context,
+	int x, int y, GTK2.SelectionData sdata, int info, int time)
+{
+	write("You dropped message %O\n", sdata->get_text());
+}
 
 //Locate an account by its text and return an iterator
 object locate_account(string addr)
