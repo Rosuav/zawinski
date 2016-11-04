@@ -28,7 +28,7 @@ void makewindow()
 	mapping short = ([ //Properties used on short fields
 		"ellipsize": GTK2.PANGO_ELLIPSIZE_END, "width-chars": 30
 	]);
-	array drag_targets = ({ ({ "message/rfc822", GTK2.TARGET_SAME_APP, 822}) });
+	array drag_targets = ({ ({ "text/plain", GTK2.TARGET_SAME_APP, 822}) });
 	win->mainwindow = mainwindow = GTK2.Window((["title": "Zawinski"]))->add(GTK2.Vbox(0, 0)
 		->pack_start(stock_menu_bar("_Options"), 0, 0, 0)
 		->add(GTK2.Hbox(0, 0)
