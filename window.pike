@@ -45,7 +45,7 @@ void makewindow()
 					win->messages = GTK2.TreeStore(({"int", "string", "string", "string", "int", "int", "string"})))
 					->set_sort_column_id(4, 1)
 				)
-					->drag_source_set(GTK2.GDK_BUTTON1_MASK|GTK2.GDK_BUTTON2_MASK, drag_targets, GTK2.GDK_ACTION_MOVE)
+					->drag_source_set(GTK2.GDK_BUTTON1_MASK|GTK2.GDK_BUTTON3_MASK, drag_targets, GTK2.GDK_ACTION_MOVE)
 					//Hidden column: UID
 					->append_column(GTK2.TreeViewColumn("From", GTK2.CellRendererText(short), "text", 1, "weight", 5))
 					//->append_column(GTK2.TreeViewColumn("To", GTK2.CellRendererText(), "text", 2))
