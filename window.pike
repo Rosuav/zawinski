@@ -35,7 +35,7 @@ void makewindow()
 			->pack_start(GTK2.ScrolledWindow()->set_policy(GTK2.POLICY_NEVER, GTK2.POLICY_AUTOMATIC)->add(
 				win->folderview = GTK2.TreeView(win->folders = GTK2.TreeStore(({"string", "string", "string"})))
 					->set_headers_visible(0)
-					->drag_dest_set(GTK2.DEST_DEFAULT_ALL, drag_targets, GTK2.GDK_ACTION_MOVE)
+					->enable_model_drag_dest(drag_targets, GTK2.GDK_ACTION_MOVE)
 					->append_column(GTK2.TreeViewColumn("Folder", GTK2.CellRendererText(), "text", 0))
 					//Hidden column: IMAP folder name. Consists of the full hierarchy, eg INBOX.Stuff.Old
 					//Hidden column: Associated account ("addr")
@@ -45,10 +45,10 @@ void makewindow()
 					win->messages = GTK2.TreeStore(({"int", "string", "string", "string", "int", "int", "string"})))
 					->set_sort_column_id(4, 1)
 				)
-					->drag_source_set(GTK2.GDK_BUTTON1_MASK|GTK2.GDK_BUTTON3_MASK, drag_targets, GTK2.GDK_ACTION_MOVE)
+					->enable_model_drag_source(GTK2.GDK_BUTTON1_MASK|GTK2.GDK_BUTTON3_MASK, drag_targets, GTK2.GDK_ACTION_MOVE)
 					//Hidden column: UID
 					->append_column(GTK2.TreeViewColumn("From", GTK2.CellRendererText(short), "text", 1, "weight", 5))
-					//->append_column(GTK2.TreeViewColumn("To", GTK2.CellRendererText(), "text", 2))
+					//->append_column(GTK2.TreeViewColumn("To", GTK2.CellRendererText(short), "text", 2, "weight", 5))
 					->append_column(GTK2.TreeViewColumn("Subject", GTK2.CellRendererText(short), "text", 3, "weight", 5))
 					//Hidden column: INTERNALDATE as a Unix time (0 for unknown)
 					//Hidden column: font weight (derived from read/unread status)
@@ -74,6 +74,7 @@ void sig_folderview_drag_data_received(GTK2.Widget self, GDK2.DragContext drag_c
 	int x, int y, GTK2.SelectionData sdata, int info, int time)
 {
 	write("You dropped message %O\n", sdata->get_text());
+	write("Dest row %O\n", self->get_dest_row_at_pos(x, y));
 }
 
 //Locate an account by its text and return an iterator
