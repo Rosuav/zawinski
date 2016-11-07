@@ -75,6 +75,9 @@ void sig_folderview_drag_data_received(GTK2.Widget self, GDK2.DragContext drag_c
 {
 	write("You dropped message %O\n", sdata->get_text());
 	write("Dest row %O\n", self->get_dest_row_at_pos(x, y));
+	object path = self->get_dest_row_at_pos(x, y)->path;
+	array row = win->folders->get_row(win->folders->get_iter(path));
+	write("Dropping on: %O\n", row);
 }
 
 //Locate an account by its text and return an iterator
