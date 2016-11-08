@@ -79,6 +79,7 @@ void sig_folderview_drag_data_received(GTK2.Widget self, GDK2.DragContext drag_c
 	array row = win->folders->get_row(win->folders->get_iter(path));
 	if (row[2] != win->curaddr) {drag_context->drag_abort(time()); return;} //Doesn't work - may need to use drag_motion event?
 	write("Dropping on: %O %O\n", win->curaddr, row);
+	G->G->connection->move_message(win->curaddr, sdata->get_text(), row[1]);
 }
 
 //Locate an account by its text and return an iterator

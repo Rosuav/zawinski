@@ -180,6 +180,33 @@ void mark_unread(string addr, string key)
 	send(conn, sprintf("a uid store %d -flags (\\Seen)\r\n", msg->UID));
 }
 
+void response_move(mapping conn, bytes line)
+{
+	sscanf(line, "OK [COPYUID %d %d %d]", int destvalidity, int sourceuid, int destuid);
+	if (!destuid) return;
+	send(conn, sprintf("move2 uid store %d +flags.silent (\\Deleted)\r\nmove3 uid expunge %<d\r\n", sourceuid));
+	response_fldselect(conn, ""); //TODO: Confirm that the message is gone, and then just remove it.
+}
+
+void move_message(string addr, string key, string dest)
+{
+	//This is looking like a standard preamble.
+	mapping conn = connections[addr];
+	if (!conn) return;
+	//The message SHOULD be in the cache, and SHOULD have a UID set.
+	mapping msg = conn->message_cache[key];
+	if (!msg || !msg->UID) return; //If it doesn't, we might have moved folders.
+	write("Move message %O to %O\n", msg->UID, dest);
+	if (conn->has_capability_move) //Not currently set, will always be false
+	{
+		//The "uid move" command isn't supported by all servers
+		send(conn, sprintf("mv uid move %d %s\r\n", msg->UID, dest));
+		return;
+	}
+	//Nor is "uid expunge". TODO: Use actual capabilities checks for these.
+	send(conn, sprintf("move uid copy %d %s\r\n", msg->UID, dest));
+}
+
 //NOTE: Currently presumes ASCII for everything that matters.
 //Binary data may be transmitted at various points (though it *should* be
 //MIME-encoded or something), but I'm not going to deal with that yet.
