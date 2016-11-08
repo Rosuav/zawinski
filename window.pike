@@ -71,13 +71,14 @@ void sig_messageview_drag_data_get(GTK2.Widget self, GDK2.DragContext drag_conte
 }
 
 void sig_folderview_drag_data_received(GTK2.Widget self, GDK2.DragContext drag_context,
-	int x, int y, GTK2.SelectionData sdata, int info, int time)
+	int x, int y, GTK2.SelectionData sdata, int info, int timestamp)
 {
 	write("You dropped message %O\n", sdata->get_text());
 	write("Dest row %O\n", self->get_dest_row_at_pos(x, y));
 	object path = self->get_dest_row_at_pos(x, y)->path;
 	array row = win->folders->get_row(win->folders->get_iter(path));
-	write("Dropping on: %O\n", row);
+	if (row[2] != win->curaddr) {drag_context->drag_abort(time()); return;} //Doesn't work
+	write("Dropping on: %O %O\n", win->curaddr, row);
 }
 
 //Locate an account by its text and return an iterator
