@@ -77,7 +77,7 @@ void sig_folderview_drag_data_received(GTK2.Widget self, GDK2.DragContext drag_c
 	write("Dest row %O\n", self->get_dest_row_at_pos(x, y));
 	object path = self->get_dest_row_at_pos(x, y)->path;
 	array row = win->folders->get_row(win->folders->get_iter(path));
-	if (row[2] != win->curaddr) {drag_context->drag_abort(time()); return;} //Doesn't work
+	if (row[2] != win->curaddr) {drag_context->drag_abort(time()); return;} //Doesn't work - may need to use drag_motion event?
 	write("Dropping on: %O %O\n", win->curaddr, row);
 }
 
