@@ -197,14 +197,21 @@ void move_message(string addr, string key, string dest)
 	mapping msg = conn->message_cache[key];
 	if (!msg || !msg->UID) return; //If it doesn't, we might have moved folders.
 	write("Move message %O to %O\n", msg->UID, dest);
-	if (conn->has_capability_move) //Not currently set, will always be false
-	{
-		//The "uid move" command isn't supported by all servers
+	if (conn->caps->MOVE)
+		//The "uid move" command isn't supported by all servers.
 		send(conn, sprintf("mv uid move %d %s\r\n", msg->UID, dest));
-		return;
-	}
-	//Nor is "uid expunge". TODO: Use actual capabilities checks for these.
-	send(conn, sprintf("move uid copy %d %s\r\n", msg->UID, dest));
+	else if (conn->caps->UIDPLUS)
+		//Nor is "uid copy" / "uid expunge", our next fallback.
+		send(conn, sprintf("move uid copy %d %s\r\n", msg->UID, dest));
+	else
+		//TODO: Do this properly.
+		werror("ERROR: Unimplemented [move w/o uidcopy]\n");
+}
+
+void response_UNTAGGED_OK(mapping conn, bytes line)
+{
+	if (sscanf(line, "[CAPABILITY%{ %[^] ]%}]", array(array(string)) caps))
+		conn->caps = (multiset)caps[*][0];
 }
 
 //NOTE: Currently presumes ASCII for everything that matters.
