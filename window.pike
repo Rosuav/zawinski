@@ -79,6 +79,9 @@ void sig_folderview_drag_data_received(GTK2.Widget self, GDK2.DragContext drag_c
 	array row = win->folders->get_row(win->folders->get_iter(path));
 	if (row[2] != win->curaddr) {drag_context->drag_abort(time()); return;} //Doesn't work - may need to use drag_motion event?
 	write("Dropping on: %O %O\n", win->curaddr, row);
+	//NOTE: Copying messages is perfectly acceptable in the protocol (and,
+	//in fact, moving is done by copying and deleting), but it's an unusual
+	//thing to want to do. Do we need to support it?
 	G->G->connection->move_message(win->curaddr, sdata->get_text(), row[1]);
 }
 
