@@ -144,6 +144,7 @@ class show_message(string addr, mapping msg)
 	void create() {::create();}
 	MIME.Message plain, html; //0 if there is no part of that type
 	mapping(string:string) images = ([]); //Inline images, keyed by their Content-ID headers
+	mapping(string:string(8bit)) attachments = ([]); //Attachments, keyed by their filenames (TODO: what if not unique?)
 
 	string display_one_email(array(string) address)
 	{
@@ -181,6 +182,16 @@ class show_message(string addr, mapping msg)
 	void find_text(MIME.Message mime)
 	{
 		//Look for text/html and text/plain and retain them.
+		switch (mime->disposition)
+		{
+			case "attachment":
+				string fn = mime->get_filename();
+				if (!fn) fn = sprintf("attach%03d", sizeof(attachments) + 1);
+				attachments[fn] = mime->getdata();
+				return;
+			case "inline": break; //TODO: Handle this rather than hoping that images are inline
+			default: break;
+		}
 		switch (mime->type)
 		{
 			case "multipart":
@@ -197,10 +208,7 @@ class show_message(string addr, mapping msg)
 				if (cid) images[cid] = mime->getdata();
 				break;
 			}
-			default:
-				//Could be an attachment.
-				//Ignore for now.
-				write("Attachment? %s/%s %O\n", mime->type, mime->subtype, mime);
+			default: break;
 		}
 	}
 
@@ -317,9 +325,13 @@ class show_message(string addr, mapping msg)
 			})/2, (["xalign": 0.0]))->set_col_spacings(15), 0, 0, 0)
 			->add(GTK2.ScrolledWindow()->add(win->display=MultiLineEntryField()
 				->set_editable(0)->set_wrap_mode(GTK2.WRAP_WORD_CHAR)))
+			->pack_end(win->attachments = GTK2.Hbox(10, 0), 0, 0, 0)
 		);
 		if (showme->subtype == "plain") win->display->set_text(content);
 		else render_html(win->display, content);
+		foreach (sort(indices(attachments)), string fn)
+			//Placeholder. TODO: Make these clickable, maybe draggable.
+			win->attachments->add(GTK2.Label("Attached file: " + fn));
 		::makewindow();
 	}
 
