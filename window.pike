@@ -2,6 +2,7 @@ inherit movablewindow;
 constant is_subwindow = 0;
 constant pos_key = "mainwindow";
 constant load_size = 1;
+mapping(string:mixed) mainwin; //Set equal to win[] and thus available to nested classes
 object mainwindow; //Used as the default parent of subwindows
 
 //Macro for GTK2.TreeViewColumn that allows multiple property/column pairs
@@ -434,6 +435,7 @@ class message_compose
 	constant is_subwindow = 0;
 	constant pos_key = "compose_message";
 	constant load_size = 1;
+	string destaddr = mainwin->curaddr; //Even if you change curaddr, this will be sent the same way.
 	void create() {::create();}
 
 	void makewindow()
@@ -449,6 +451,7 @@ class message_compose
 	constant menu_message_send = ({"_Send", 's', GTK2.GDK_CONTROL_MASK});
 	void message_send()
 	{
+		write("My addr %O curaddr %O\n", destaddr, mainwin->curaddr);
 		MessageBox(0, GTK2.MESSAGE_WARNING, GTK2.BUTTONS_OK, "Unimplemented: send message", win->mainwindow);
 	}
 
@@ -464,4 +467,5 @@ void create(string name)
 	if (G->G->window) mainwindow = G->G->window->mainwindow;
 	G->G->window = this;
 	::create(name);
+	mainwin = win;
 }
