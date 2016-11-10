@@ -29,7 +29,7 @@ void makewindow()
 	]);
 	array drag_targets = ({ ({ "text/plain", GTK2.TARGET_SAME_APP, 822}) });
 	win->mainwindow = mainwindow = GTK2.Window((["title": "Zawinski"]))->add(GTK2.Vbox(0, 0)
-		->pack_start(stock_menu_bar("_Options"), 0, 0, 0)
+		->pack_start(stock_menu_bar("_Message", "_Options"), 0, 0, 0)
 		->add(GTK2.Hbox(0, 0)
 			->pack_start(GTK2.ScrolledWindow()->set_policy(GTK2.POLICY_NEVER, GTK2.POLICY_AUTOMATIC)->add(
 				win->folderview = GTK2.TreeView(win->folders = GTK2.TreeStore(({"string", "string", "string"})))
@@ -426,6 +426,32 @@ class options_accounts
 //TODO: Do this on a timer instead, controlled entirely within connection.pike
 constant menu_options_checkmail = "Check for new mail";
 void options_checkmail() {G->G->connection->poll();}
+
+constant menu_message_compose = "_Compose";
+class message_compose
+{
+	inherit movablewindow;
+	constant is_subwindow = 0;
+	constant pos_key = "compose_message";
+	constant load_size = 1;
+	void create() {::create();}
+
+	void makewindow()
+	{
+		win->mainwindow = GTK2.Window((["title": "Compose Message"]))->add(GTK2.Vbox(0, 0)
+			->pack_start(stock_menu_bar("_Signatures"), 0, 0, 0)
+			->add(win->mle = MultiLineEntryField())
+			//TODO: Attachments area
+		)->set_default_size(400, 300);
+		::makewindow();
+	}
+
+	constant menu_signatures_configure = "_Configure";
+	void signatures_configure()
+	{
+		MessageBox(0, GTK2.MESSAGE_WARNING, GTK2.BUTTONS_OK, "Unimplemented.", win->mainwindow);
+	}
+}
 
 void create(string name)
 {
