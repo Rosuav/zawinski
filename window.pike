@@ -439,17 +439,23 @@ class message_compose
 	void makewindow()
 	{
 		win->mainwindow = GTK2.Window((["title": "Compose Message"]))->add(GTK2.Vbox(0, 0)
-			->pack_start(stock_menu_bar("_Signatures"), 0, 0, 0)
+			->pack_start(stock_menu_bar("_Message", "_Signatures"), 0, 0, 0)
 			->add(win->mle = MultiLineEntryField())
 			//TODO: Attachments area
 		)->set_default_size(400, 300);
 		::makewindow();
 	}
 
+	constant menu_message_send = "_Send";
+	void message_send()
+	{
+		MessageBox(0, GTK2.MESSAGE_WARNING, GTK2.BUTTONS_OK, "Unimplemented: send message", win->mainwindow);
+	}
+
 	constant menu_signatures_configure = "_Configure";
 	void signatures_configure()
 	{
-		MessageBox(0, GTK2.MESSAGE_WARNING, GTK2.BUTTONS_OK, "Unimplemented.", win->mainwindow);
+		MessageBox(0, GTK2.MESSAGE_WARNING, GTK2.BUTTONS_OK, "Unimplemented: configure sigs", win->mainwindow);
 	}
 }
 
