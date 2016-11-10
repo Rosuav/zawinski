@@ -446,7 +446,7 @@ class message_compose
 		::makewindow();
 	}
 
-	constant menu_message_send = "_Send";
+	constant menu_message_send = ({"_Send", 's', GTK2.GDK_CONTROL_MASK});
 	void message_send()
 	{
 		MessageBox(0, GTK2.MESSAGE_WARNING, GTK2.BUTTONS_OK, "Unimplemented: send message", win->mainwindow);
