@@ -24,7 +24,6 @@ Regexp.SimpleRegexp whites = Regexp.SimpleRegexp("[ \n]+");
 
 void makewindow()
 {
-	win->menuitems = ([]);
 	mapping short = ([ //Properties used on short fields
 		"ellipsize": GTK2.PANGO_ELLIPSIZE_END, "width-chars": 30
 	]);
