@@ -2,7 +2,7 @@ inherit movablewindow;
 constant is_subwindow = 0;
 constant pos_key = "mainwindow";
 constant load_size = 1;
-object mainwindow;
+object mainwindow; //Used as the default parent of subwindows
 
 //Macro for GTK2.TreeViewColumn that allows multiple property/column pairs
 /* Not needed in 8.1 latest - use this if 8.0 compat is needed.
