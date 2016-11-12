@@ -428,7 +428,7 @@ class options_accounts
 constant menu_options_checkmail = "Check for new mail";
 void options_checkmail() {G->G->connection->poll();}
 
-constant menu_message_compose = "_Compose";
+constant menu_message_compose = ({"_Compose", 'n', GTK2.GDK_CONTROL_MASK});
 class message_compose
 {
 	inherit movablewindow;
