@@ -459,6 +459,14 @@ class message_compose
 	void message_send()
 	{
 		write("My addr %O curaddr %O\n", destaddr, mainwin->curaddr);
+		mapping(string:string|array) headers = ([]);
+		foreach ("from to cc subject"/" ", string hdr)
+		{
+			string val = win[hdr]->get_text();
+			if (val != "") headers[hdr] = val;
+		}
+		object msg = MIME.Message(win->mle->get_text(), headers);
+		write("Resulting message:\n-----------------\n%s\n-------\n", (string)msg);
 		MessageBox(0, GTK2.MESSAGE_WARNING, GTK2.BUTTONS_OK, "Unimplemented: send message", win->mainwindow);
 	}
 
