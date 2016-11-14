@@ -442,6 +442,13 @@ class message_compose
 	{
 		win->mainwindow = GTK2.Window((["title": "Compose Message"]))->add(GTK2.Vbox(0, 0)
 			->pack_start(stock_menu_bar("_Message", "_Signatures"), 0, 0, 0)
+			->pack_start(two_column(({
+				"From", win->from = GTK2.Entry(),
+				"To", win->to = GTK2.Entry(),
+				"Cc", win->cc = GTK2.Entry(),
+				"Bcc", win->bcc = GTK2.Entry(),
+				"Subject", win->subject = GTK2.Entry(),
+			})), 0, 0, 0)
 			->add(win->mle = MultiLineEntryField())
 			//TODO: Attachments area
 		)->set_default_size(400, 300);
