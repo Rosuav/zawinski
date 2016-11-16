@@ -459,7 +459,9 @@ class message_compose
 	void message_send()
 	{
 		write("My addr %O curaddr %O\n", destaddr, mainwin->curaddr);
-		mapping(string:string|array) headers = ([]);
+		mapping(string:string|array) headers = ([
+			"Date": Calendar.now()->format_smtp(),
+		]);
 		foreach ("from to cc subject"/" ", string hdr)
 		{
 			string val = win[hdr]->get_text();
