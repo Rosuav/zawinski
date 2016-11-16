@@ -448,8 +448,8 @@ class message_compose
 	constant is_subwindow = 0;
 	constant pos_key = "compose_message";
 	constant load_size = 1;
-	string destaddr = mainwin->curaddr; //Even if you change curaddr, this will be sent the same way.
-	void create() {::create();}
+	mapping dest = persist["accounts"][mainwin->curaddr];
+	void create() {if (dest) ::create();}
 
 	void makewindow()
 	{
@@ -470,8 +470,6 @@ class message_compose
 	constant menu_message_send = ({"_Send", 's', GTK2.GDK_CONTROL_MASK});
 	void message_send()
 	{
-		write("My addr %O curaddr %O\n", destaddr, mainwin->curaddr);
-		mapping dest = persist["accounts"][destaddr];
 		mapping(string:string|array) headers = ([
 			"From": make_address(dest->from, dest->real_name),
 			"Date": Calendar.now()->format_smtp(),
