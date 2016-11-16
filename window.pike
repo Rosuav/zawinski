@@ -418,7 +418,11 @@ class options_accounts
 {
 	inherit configdlg;
 	mapping(string:mixed) windowprops=(["title": "Configure mail accounts"]);
-	constant elements=({"kwd:Name", "IMAP server", "Login", "*Password"});
+	constant elements=({
+		"kwd:Name",
+		"IMAP server", "Login", "*Password",
+		"real_name:Real name", "From address",
+	});
 	constant persist_key = "accounts";
 	void save_content() {call_out(G->G->connection->connect, 0);}
 	void delete_content() {call_out(G->G->connection->connect, 0);}
@@ -427,6 +431,15 @@ class options_accounts
 //TODO: Do this on a timer instead, controlled entirely within connection.pike
 constant menu_options_checkmail = "Check for new mail";
 void options_checkmail() {G->G->connection->poll();}
+
+//Utility function to format an address and optionally a name
+//in an appropriate way for From/To headers etc. One place to
+//change if I want to add sophistication.
+string make_address(string addr, string|void name)
+{
+	if (name) return sprintf("%s <%s>", name, addr);
+	return addr;
+}
 
 constant menu_message_compose = ({"_Compose", 'n', GTK2.GDK_CONTROL_MASK});
 class message_compose
@@ -443,7 +456,6 @@ class message_compose
 		win->mainwindow = GTK2.Window((["title": "Compose Message"]))->add(GTK2.Vbox(0, 0)
 			->pack_start(stock_menu_bar("_Message", "_Signatures"), 0, 0, 0)
 			->pack_start(two_column(({
-				"From", win->from = GTK2.Entry(),
 				"To", win->to = GTK2.Entry(),
 				"Cc", win->cc = GTK2.Entry(),
 				"Bcc", win->bcc = GTK2.Entry(),
@@ -459,10 +471,12 @@ class message_compose
 	void message_send()
 	{
 		write("My addr %O curaddr %O\n", destaddr, mainwin->curaddr);
+		mapping dest = persist["accounts"][destaddr];
 		mapping(string:string|array) headers = ([
+			"From": make_address(dest->from, dest->real_name),
 			"Date": Calendar.now()->format_smtp(),
 		]);
-		foreach ("from to cc subject"/" ", string hdr)
+		foreach ("to cc subject"/" ", string hdr)
 		{
 			string val = win[hdr]->get_text();
 			if (val != "") headers[hdr] = val;
