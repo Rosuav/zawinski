@@ -456,6 +456,7 @@ class message_compose
 		win->mainwindow = GTK2.Window((["title": "Compose Message"]))->add(GTK2.Vbox(0, 0)
 			->pack_start(stock_menu_bar("_Message", "_Signatures"), 0, 0, 0)
 			->pack_start(two_column(({
+				"From", GTK2.Label(make_address(dest->from, dest->real_name)),
 				"To", win->to = GTK2.Entry(),
 				"Cc", win->cc = GTK2.Entry(),
 				"Bcc", win->bcc = GTK2.Entry(),
