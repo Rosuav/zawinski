@@ -23,6 +23,9 @@ as stand-alone entities (classic style), or as some kind of tree (Mailman style)
 A tree could cost a lot in performance (have to load all messages), and might
 complicate the sorting.
 
+TODO: Tag messages. Depends on PERMANENTFLAGS (\*), which isn't a capability per
+se. Use a prefix, eg "tag.TagName" or "zawinski.TagName" or something.
+
 NOTE: This requires a *very* recent build of Pike. Changes have been made in the
 core language to support functionality needed (or wanted) by Zawinski. Use 8.1,
 and make sure your Pike version is at least as new as your Zawinski. (One day,
