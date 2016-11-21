@@ -346,6 +346,13 @@ class show_message(string addr, mapping msg)
 		G->G->connection->mark_unread(addr, msg->key);
 		closewindow();
 	}
+
+	constant menu_message_reply = ({"_Reply", 'r', GTK2.GDK_CONTROL_MASK});
+	void message_reply()
+	{
+		compose_message(addr, message);
+		closewindow();
+	}
 }
 
 string shorten_address(string addr)
