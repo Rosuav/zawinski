@@ -487,6 +487,7 @@ class compose_message(string curaddr, MIME.Message|void replyto)
 		mapping(string:string|array) headers = ([
 			"From": make_address(dest->from, dest->real_name),
 			"Date": Calendar.now()->format_smtp(),
+			//TODO: Message-ID
 		]);
 		foreach ("to cc subject"/" ", string hdr)
 		{
