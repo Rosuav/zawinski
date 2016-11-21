@@ -458,7 +458,7 @@ string gen_message_id()
 	return sprintf("<%f.%s@%s>",
 		time(1234567890), //Because why not
 		MIME.encode_base64(random_string(6)),
-		Process.run(({"hostname", "--fqdn"}))->stdout,
+		String.trim_all_whites(Process.run(({"hostname", "--fqdn"}))->stdout),
 	);
 }
 
