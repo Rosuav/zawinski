@@ -141,10 +141,15 @@ class show_message(string addr, mapping msg)
 	constant is_subwindow = 0;
 	constant pos_key = "show_message";
 	constant load_size = 1;
-	void create() {::create();}
-	MIME.Message plain, html; //0 if there is no part of that type
+	MIME.Message message, plain, html; //0 if there is no part of that type
 	mapping(string:string) images = ([]); //Inline images, keyed by their Content-ID headers
 	mapping(string:string(8bit)) attachments = ([]); //Attachments, keyed by their filenames (TODO: what if not unique?)
+
+	void create()
+	{
+		find_text(message = MIME.Message(String.trim_all_whites(msg->RFC822)));
+		::create();
+	}
 
 	string display_one_email(array(string) address)
 	{
@@ -302,7 +307,6 @@ class show_message(string addr, mapping msg)
 		structures.
 		*/
 		//Stdio.write_file("RFC822", msg->RFC822);
-		find_text(MIME.Message(String.trim_all_whites(msg->RFC822)));
 		//HACK: Test html-only or text-only with "plain=0;" or "html=0;"
 		//TODO: Make the plain-vs-html preference configurable
 		MIME.Message showme = html || plain;
@@ -442,14 +446,16 @@ string make_address(string addr, string|void name)
 }
 
 constant menu_message_compose = ({"_Compose", 'n', GTK2.GDK_CONTROL_MASK});
-class message_compose
+void message_compose() {if (win->curaddr) compose_message(win->curaddr);}
+
+class compose_message(string curaddr, MIME.Message|void replyto)
 {
 	inherit movablewindow;
 	constant is_subwindow = 0;
 	constant pos_key = "compose_message";
 	constant load_size = 1;
-	mapping dest = persist["accounts"][mainwin->curaddr];
-	void create() {if (dest) ::create();}
+	mapping dest;
+	void create() {dest = persist["accounts"][curaddr]; ::create();} //Can't initialize as curaddr is set later than that
 
 	void makewindow()
 	{
