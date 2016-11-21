@@ -452,6 +452,16 @@ string make_address(string addr, string|void name)
 	return addr;
 }
 
+//Generate a message ID for an outgoing message.
+string gen_message_id()
+{
+	return sprintf("<%f.%s@%s>",
+		time(1234567890), //Because why not
+		MIME.encode_base64(random_string(6)),
+		Process.run(({"hostname", "--fqdn"}))->stdout,
+	);
+}
+
 constant menu_message_compose = ({"_Compose", 'n', GTK2.GDK_CONTROL_MASK});
 void message_compose() {if (win->curaddr) compose_message(win->curaddr);}
 
@@ -487,7 +497,7 @@ class compose_message(string curaddr, MIME.Message|void replyto)
 		mapping(string:string|array) headers = ([
 			"From": make_address(dest->from, dest->real_name),
 			"Date": Calendar.now()->format_smtp(),
-			//TODO: Message-ID
+			"Message-ID": gen_message_id(),
 		]);
 		foreach ("to cc subject"/" ", string hdr)
 		{
@@ -497,7 +507,7 @@ class compose_message(string curaddr, MIME.Message|void replyto)
 		if (replyto)
 		{
 			headers["In-Reply-To"] = replyto->headers["message-id"];
-			headers["References"] = "TODO";
+			headers["References"] = (replyto->headers->references || "") + " " + replyto->headers["message-id"];
 		}
 		object msg = MIME.Message(win->mle->get_text(), headers);
 		write("Resulting message:\n-----------------\n%s\n-------\n", (string)msg);
