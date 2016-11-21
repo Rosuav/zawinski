@@ -493,6 +493,11 @@ class compose_message(string curaddr, MIME.Message|void replyto)
 			string val = win[hdr]->get_text();
 			if (val != "") headers[hdr] = val;
 		}
+		if (replyto)
+		{
+			headers["In-Reply-To"] = replyto->headers["message-id"];
+			headers["References"] = "TODO";
+		}
 		object msg = MIME.Message(win->mle->get_text(), headers);
 		write("Resulting message:\n-----------------\n%s\n-------\n", (string)msg);
 		MessageBox(0, GTK2.MESSAGE_WARNING, GTK2.BUTTONS_OK, "Unimplemented: send message", win->mainwindow);
