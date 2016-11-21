@@ -136,7 +136,7 @@ void response_UNTAGGED_FETCH(mapping conn, bytes line)
 	mapping parent = 0;
 	if (msg->headers->references)
 		foreach (msg->headers->references/" ", string id)
-			parent = parent || conn->message_cache[id];
+			parent = conn->message_cache[id] || parent;
 	G->G->window->update_message(msg, parent);
 	if (m_delete(msg, "want_rfc822")) G->G->window->show_message(conn->addr, msg);
 }
