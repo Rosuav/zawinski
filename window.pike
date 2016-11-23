@@ -488,6 +488,21 @@ class compose_message(string curaddr, MIME.Message|void replyto)
 			->add(win->mle = MultiLineEntryField())
 			//TODO: Attachments area
 		)->set_default_size(400, 300);
+		if (replyto)
+		{
+			mapping h = replyto->headers;
+			win->to->set_text(h["reply-to"] || h->from || "");
+			string subj = h->subject || "";
+			while (sscanf(subj, "Re:%s", subj) ||
+				sscanf(subj, "RE:%s", subj) ||
+				sscanf(subj, "FWD:%s", subj) ||
+				sscanf(subj, "Fwd:%s", subj)
+			)
+				subj = String.trim_all_whites(subj);
+			win->subject->set_text("Re: " + subj);
+			//TODO: Message text, including handling HTML (but the reply will
+			//always be plain text)
+		}
 		::makewindow();
 	}
 
