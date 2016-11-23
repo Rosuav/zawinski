@@ -462,6 +462,20 @@ string gen_message_id()
 	);
 }
 
+//Derive a set of email addresses from a comma-delimited "To" string
+array(string) destinations(string target)
+{
+	if (!target || target == "") return ({ });
+	array ret = ({ });
+	foreach (target / ",", string part)
+	{
+		if (sscanf(part, "%*s<%s>", string addr)) ret += ({addr});
+		else if (!has_value(part, ' ') && has_value(part, '@')) ret += ({part});
+		//else ignore it
+	}
+	return ret;
+}
+
 constant menu_message_compose = ({"_Compose", 'n', GTK2.GDK_CONTROL_MASK});
 void message_compose() {if (win->curaddr) compose_message(win->curaddr);}
 
@@ -526,6 +540,9 @@ class compose_message(string curaddr, MIME.Message|void replyto)
 		}
 		object msg = MIME.Message(win->mle->get_text(), headers);
 		write("Resulting message:\n-----------------\n%s\n-------\n", (string)msg);
+		array(string) recip = ({ });
+		foreach ("to cc bcc"/" ", string hdr) recip += destinations(win[hdr]->get_text());
+		write("Recipients: %O\n-----------------\n", recip);
 		MessageBox(0, GTK2.MESSAGE_WARNING, GTK2.BUTTONS_OK, "Unimplemented: send message", win->mainwindow);
 	}
 
