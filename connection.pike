@@ -20,7 +20,6 @@ void select_folder(string addr, string folder)
 	mapping conn = connections[addr];
 	if (!conn) return;
 	send(conn, "fldselect select " + folder + "\r\n");
-	write("Select [%O] [%O]\n", addr, folder);
 }
 
 void response_fldselect(mapping conn, bytes line)
@@ -165,7 +164,6 @@ void fetch_message(string addr, string key)
 			send(conn, sprintf("a uid store %d +flags (\\Seen)\r\n", msg->UID));
 		return;
 	}
-	write("Fetching %O : %O [%d]\n", addr, key, msg->UID);
 	msg->want_rfc822 = 1;
 	send(conn, sprintf("a uid fetch %d (rfc822 envelope)\r\n", msg->UID));
 }
@@ -301,7 +299,7 @@ int send(mapping conn,string text)
 
 void complete_connection(string|Stdio.File|int(0..0) status, mapping conn)
 {
-	if (stringp(status)) {werror("%%%%%% %s\n", status); return;}
+	if (stringp(status)) return; //{werror("%%%%%% %s\n", status); return;}
 	object est = m_delete(conn, "establish"); //De-floop. Whatever happens here, it's done and finished. No more resolving.
 	if (!status)
 	{
@@ -309,7 +307,6 @@ void complete_connection(string|Stdio.File|int(0..0) status, mapping conn)
 		else werror("%%%%%% Error connecting to %s: %s [%d]\n", conn->worldname, strerror(est->errno), est->errno);
 		return;
 	}
-	write("CONNECTED\n");
 	conn->sock = status;
 	conn->sock->set_id(conn); //Refloop
 	//Note: In setting the callbacks, use G->G->connection->x instead of just x, in case this is the old callback.
