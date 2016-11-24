@@ -342,6 +342,17 @@ void connect()
 	}
 }
 
+void deliver_message(string|Stdio.File|int(0..0) status, string body, array(string) recipients)
+{
+	if (objectp(status)) status->write("quit\r\n"); //Stub.
+}
+
+void send_message(string server, string body, array(string) recipients)
+{
+	//TODO: Use 587 if available
+	establish_connection(server, 25, deliver_message, body, recipients);
+}
+
 void create()
 {
 	if (G->G->connection) connections = G->G->connection->connections;
