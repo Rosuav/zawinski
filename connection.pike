@@ -342,6 +342,12 @@ void connect()
 	}
 }
 
+/*
+Okay, so how should this go... Should a message be first created in the outbox,
+and then a background operation takes messages from the outbox and pushes them
+to SMTP? What happens if the SMTP server rejects the message - should it go to
+Sent as a failure, or what? What do other clients do?
+*/
 void deliver_message(string|Stdio.File|int(0..0) status, string body, array(string) recipients)
 {
 	if (objectp(status)) status->write("quit\r\n"); //Stub.
