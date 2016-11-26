@@ -347,7 +347,11 @@ Okay, so how should this go... Should a message be first created in the outbox,
 and then a background operation takes messages from the outbox and pushes them
 to SMTP? What happens if the SMTP server rejects the message - should it go to
 Sent as a failure, or what? What do other clients do?
-*/
+
+There isn't an outbox. My solution is to use the Drafts folder with a tag. Or
+maybe something else. I dunno. My solution is to write comments and hope the
+code'll write itself. And then to listen to "Frozen" and just enjoy the moosic.
+
 void deliver_message(string|Stdio.File|int(0..0) status, string body, array(string) recipients)
 {
 	if (objectp(status)) status->write("quit\r\n"); //Stub.
@@ -358,6 +362,7 @@ void send_message(string server, string body, array(string) recipients)
 	//TODO: Use 587 if available
 	establish_connection(server, 25, deliver_message, body, recipients);
 }
+*/
 
 void create()
 {

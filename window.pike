@@ -528,7 +528,7 @@ class compose_message(string curaddr, MIME.Message|void replyto)
 			"Date": Calendar.now()->format_smtp(),
 			"Message-ID": gen_message_id(),
 		]);
-		foreach ("to cc subject"/" ", string hdr)
+		foreach ("to cc bcc subject"/" ", string hdr)
 		{
 			string val = win[hdr]->get_text();
 			if (val != "") headers[hdr] = val;
@@ -539,6 +539,7 @@ class compose_message(string curaddr, MIME.Message|void replyto)
 			headers["References"] = (replyto->headers->references || "") + " " + replyto->headers["message-id"];
 		}
 		object msg = MIME.Message(win->mle->get_text(), headers);
+		//G->G->connection->enqueue_message(curaddr, (string)msg);
 		write("Resulting message:\n-----------------\n%s\n-------\n", (string)msg);
 		array(string) recip = ({ });
 		foreach ("to cc bcc"/" ", string hdr) recip += destinations(win[hdr]->get_text());
