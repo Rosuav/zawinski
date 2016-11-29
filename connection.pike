@@ -352,6 +352,10 @@ There isn't an outbox. My solution is to use the Drafts folder with a tag. Or
 maybe something else. I dunno. My solution is to write comments and hope the
 code'll write itself. And then to listen to "Frozen" and just enjoy the moosic.
 
+I suggest a new plan. Let the SMTP win.
+We'll store the pending message in persist[], not depending on the server at
+all, and then when the message ends up moving, we save it. Should work? Maybe?
+
 void deliver_message(string|Stdio.File|int(0..0) status, string body, array(string) recipients)
 {
 	if (objectp(status)) status->write("quit\r\n"); //Stub.
