@@ -544,7 +544,7 @@ class compose_message(string curaddr, MIME.Message|void replyto)
 		array(string) recip = ({ });
 		foreach ("to cc bcc"/" ", string hdr) recip += destinations(win[hdr]->get_text());
 		write("Recipients: %O\n-----------------\n", recip);
-		MessageBox(0, GTK2.MESSAGE_WARNING, GTK2.BUTTONS_OK, "Unimplemented: send message", win->mainwindow);
+		G->G->connection->send_message(curaddr, (string)msg, recip);
 	}
 
 	constant menu_signatures_configure = "_Configure";

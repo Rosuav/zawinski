@@ -355,18 +355,21 @@ code'll write itself. And then to listen to "Frozen" and just enjoy the moosic.
 I suggest a new plan. Let the SMTP win.
 We'll store the pending message in persist[], not depending on the server at
 all, and then when the message ends up moving, we save it. Should work? Maybe?
+*/
 
+//Why is the callback sometimes getting called again after it's been nulled out??
 void deliver_message(string|Stdio.File|int(0..0) status, string body, array(string) recipients)
 {
+	write("deliver_message: %O\n", status);
 	if (objectp(status)) status->write("quit\r\n"); //Stub.
 }
 
-void send_message(string server, string body, array(string) recipients)
+void send_message(string addr, string body, array(string) recipients)
 {
 	//TODO: Use 587 if available
-	establish_connection(server, 25, deliver_message, body, recipients);
+	//Currently assumes the SMTP server is the IMAP server.
+	establish_connection(persist["accounts"][addr]->imap, 25, deliver_message, body, recipients);
 }
-*/
 
 void create()
 {
