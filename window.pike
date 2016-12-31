@@ -469,6 +469,7 @@ array(string) destinations(string target)
 	array ret = ({ });
 	foreach (target / ",", string part)
 	{
+		part = String.trim_all_whites(part);
 		if (sscanf(part, "%*s<%s>", string addr)) ret += ({addr});
 		else if (!has_value(part, ' ') && has_value(part, '@')) ret += ({part});
 		//else ignore it
@@ -523,10 +524,11 @@ class compose_message(string curaddr, MIME.Message|void replyto)
 	constant menu_message_send = ({"_Send", 's', GTK2.GDK_CONTROL_MASK});
 	void message_send()
 	{
+		string msgid = gen_message_id();
 		mapping(string:string|array) headers = ([
 			"From": make_address(dest->from, dest->real_name),
 			"Date": Calendar.now()->format_smtp(),
-			"Message-ID": gen_message_id(),
+			"Message-ID": msgid,
 		]);
 		foreach ("to cc bcc subject"/" ", string hdr)
 		{
@@ -544,7 +546,7 @@ class compose_message(string curaddr, MIME.Message|void replyto)
 		array(string) recip = ({ });
 		foreach ("to cc bcc"/" ", string hdr) recip += destinations(win[hdr]->get_text());
 		write("Recipients: %O\n-----------------\n", recip);
-		G->G->connection->send_message(curaddr, (string)msg, recip);
+		G->G->connection->send_message(curaddr, msgid, (string)msg, recip);
 	}
 
 	constant menu_signatures_configure = "_Configure";

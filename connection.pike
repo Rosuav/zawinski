@@ -342,33 +342,65 @@ void connect()
 	}
 }
 
-/*
-Okay, so how should this go... Should a message be first created in the outbox,
-and then a background operation takes messages from the outbox and pushes them
-to SMTP? What happens if the SMTP server rejects the message - should it go to
-Sent as a failure, or what? What do other clients do?
-
-There isn't an outbox. My solution is to use the Drafts folder with a tag. Or
-maybe something else. I dunno. My solution is to write comments and hope the
-code'll write itself. And then to listen to "Frozen" and just enjoy the moosic.
-
-I suggest a new plan. Let the SMTP win.
-We'll store the pending message in persist[], not depending on the server at
-all, and then when the message ends up moving, we save it. Should work? Maybe?
-*/
-
-//Why is the callback sometimes getting called again after it's been nulled out??
-void deliver_message(string|Stdio.File|int(0..0) status, string body, array(string) recipients)
+void smtpline(mapping info, bytes line)
 {
-	write("deliver_message: %O\n", status);
-	if (objectp(status)) status->write("quit\r\n"); //Stub.
+	if (sscanf(line, "%d %s", int code, line) && code)
+	{
+		//Normal server message - status code plus human-readable
+		switch (code)
+		{
+			case 220: //Initial greeting
+			case 250: //Positive response
+			case 354: //Socket to me
+				info->sock->write(info->data[0]);
+				info->data = info->data[1..];
+				break;
+			case 221: //OK, bye [0:08:53]
+				m_delete(persist["sendme"], info->msgid);
+				persist->save();
+				break;
+			default:
+				werror("UNKNOWN SMTP RESPONSE\n%d %s\n", code, line);
+				info->sock->write("quit\r\n"); //Abort connection if we don't understand
+				break;
+		}
+	}
+	//else it's a different sort of line (what, I'm not sure)
 }
 
-void send_message(string addr, string body, array(string) recipients)
+//Should this lot be packaged up into a coherent Hogan-like interface to a line-based socket??
+void smtpread(mapping conn, bytes data)
+{
+	conn->readbuffer += data;
+	while (sscanf(conn->readbuffer, "%s\n%s", bytes line, conn->readbuffer))
+		smtpline(conn, line - "\r");
+}
+
+void deliver_message(string|Stdio.File|int(0..0) status, mapping info)
+{
+	if (!objectp(status)) return;
+	info->sock = status;
+	status->set_id(info);
+	info->data = ({
+		sprintf("helo %s\r\n", gethostname() || "zawinski"),
+		sprintf("mail from:%s\r\n", persist["accounts"][info->addr]->from),
+		}) + sprintf("rcpt to:%s\r\n", info->recipients[*]) + ({
+		"data\r\n",
+		info->body + "\r\n.\r\n", //NOTE: Could be huge. Might end up blocking.
+		"quit\r\n"
+	});
+	status->set_nonblocking(G->G->connection->smtpread, G->G->connection->smtpwrite, 0);
+}
+
+void send_message(string addr, string msgid, string body, array(string) recipients)
 {
 	//TODO: Use 587 if available
 	//Currently assumes the SMTP server is the IMAP server.
-	establish_connection(persist["accounts"][addr]->imap, 25, deliver_message, body, recipients);
+	mapping info = (["addr": addr, "msgid": msgid, "body": body, "recipients": recipients, "readbuffer": "", "writebuffer": ""]);
+	if (!mappingp(persist["sendme"])) persist["sendme"] = ([]);
+	persist["sendme"][msgid] = ({addr, body, recipients}); //TODO: Retrieve these on startup and autosend
+	persist->save();
+	establish_connection(persist["accounts"][addr]->imap, 25, deliver_message, info);
 }
 
 void create()
