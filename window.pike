@@ -547,6 +547,7 @@ class compose_message(string curaddr, MIME.Message|void replyto)
 		foreach ("to cc bcc"/" ", string hdr) recip += destinations(win[hdr]->get_text());
 		write("Recipients: %O\n-----------------\n", recip);
 		G->G->connection->send_message(curaddr, msgid, (string)msg, recip);
+		closewindow();
 	}
 
 	constant menu_signatures_configure = "_Configure";
