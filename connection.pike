@@ -355,13 +355,13 @@ void smtpline(mapping info, bytes line)
 				info->sock->write(info->data[0]);
 				info->data = info->data[1..];
 				break;
+			default: //Abort connection if we don't understand
+				werror("UNKNOWN SMTP RESPONSE\n%d %s\n", code, line);
+			case 554: //Abort also on error
+				info->sock->write("quit\r\n");
 			case 221: //OK, bye [0:08:53]
 				m_delete(persist["sendme"], info->msgid);
 				persist->save();
-				break;
-			default:
-				werror("UNKNOWN SMTP RESPONSE\n%d %s\n", code, line);
-				info->sock->write("quit\r\n"); //Abort connection if we don't understand
 				break;
 		}
 	}
