@@ -400,6 +400,7 @@ void send_message(string addr, string msgid, string body, array(string) recipien
 	if (!mappingp(persist["sendme"])) persist["sendme"] = ([]);
 	persist["sendme"][msgid] = ({addr, body, recipients}); //TODO: Retrieve these on startup and autosend
 	persist->save();
+	//TODO: Should the message be stored in the sent box before or after attempting SMTP delivery??
 	establish_connection(persist["accounts"][addr]->imap, 25, deliver_message, info);
 }
 
