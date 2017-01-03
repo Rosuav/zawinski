@@ -352,13 +352,15 @@ void smtpline(mapping info, bytes line)
 			case 220: //Initial greeting
 			case 250: //Positive response
 			case 354: //Socket to me
-				info->sock->write(info->data[0]);
+				info->writeme += info->data[0];
 				info->data = info->data[1..];
+				smtpwrite(info);
 				break;
 			default: //Abort connection if we don't understand
 				werror("UNKNOWN SMTP RESPONSE\n%d %s\n", code, line);
 			case 554: //Abort also on error
-				info->sock->write("quit\r\n");
+				info->writeme += "quit\r\n";
+				smtpwrite(info);
 			case 221: //OK, bye [0:08:53]
 				m_delete(persist["sendme"], info->msgid);
 				persist->save();
@@ -374,6 +376,12 @@ void smtpread(mapping conn, bytes data)
 	conn->readbuffer += data;
 	while (sscanf(conn->readbuffer, "%s\n%s", bytes line, conn->readbuffer))
 		smtpline(conn, line - "\r");
+}
+
+//Write as much buffered socket data as possible
+void smtpwrite(mapping conn)
+{
+	if (conn->sock && conn->writeme!="") conn->writeme=conn->writeme[conn->sock->write(conn->writeme)..];
 }
 
 void deliver_message(string|Stdio.File|int(0..0) status, mapping info)
@@ -396,7 +404,7 @@ void send_message(string addr, string msgid, string body, array(string) recipien
 {
 	//TODO: Use 587 if available
 	//Currently assumes the SMTP server is the IMAP server.
-	mapping info = (["addr": addr, "msgid": msgid, "body": body, "recipients": recipients, "readbuffer": "", "writebuffer": ""]);
+	mapping info = (["addr": addr, "msgid": msgid, "body": body, "recipients": recipients, "readbuffer": "", "writeme": ""]);
 	if (!mappingp(persist["sendme"])) persist["sendme"] = ([]);
 	persist["sendme"][msgid] = ({addr, body, recipients}); //TODO: Retrieve these on startup and autosend
 	persist->save();
