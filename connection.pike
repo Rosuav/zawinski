@@ -410,6 +410,10 @@ void send_message(string addr, string msgid, string body, array(string) recipien
 	persist->save();
 	//TODO: Should the message be stored in the sent box before or after attempting SMTP delivery??
 	//Probably before.... I think.
+	mapping conn = connections[addr];
+	if (!conn) return;
+	//TODO: Send the braces, then wait for the server's OK before sending the rest.
+	send(conn, sprintf("sendmail append INBOX.Sent (Sending) {%d}\r\n%s\r\n", sizeof(body), body));
 	establish_connection(persist["accounts"][addr]->imap, 25, deliver_message, info);
 }
 
