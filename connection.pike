@@ -412,7 +412,10 @@ void send_message(string addr, string msgid, string body, array(string) recipien
 	//Probably before.... I think.
 	mapping conn = connections[addr];
 	if (!conn) return;
-	//TODO: Send the braces, then wait for the server's OK before sending the rest.
+	//TODO: Send the braces, then wait for the server's OK before sending the rest. Doing this
+	//properly actually depends on a fair amount of statefulness, though (exactly how much
+	//gets aborted if the server rejects the literal?), so I'm okay with leaving it in "naughty
+	//mode" for now.
 	send(conn, sprintf("sendmail append INBOX.Sent (Sending) {%d}\r\n%s\r\n", sizeof(body), body));
 	establish_connection(persist["accounts"][addr]->imap, 25, deliver_message, info);
 }
