@@ -56,6 +56,7 @@ void makewindow()
 			))
 		)
 	);
+	win->messageview->get_selection()->set_mode(GTK2.SELECTION_MULTIPLE);
 	::makewindow();
 }
 
@@ -64,16 +65,23 @@ int sig_mainwindow_destroy() {exit(0);}
 void sig_messageview_drag_data_get(GTK2.Widget self, GDK2.DragContext drag_context,
 	GTK2.SelectionData sdata, int info, int time)
 {
-	[GTK2.TreeIter iter, GTK2.TreeModel list_store] = self->get_selection()->get_selected();
-	string key = win->messages->get_value(win->messagesort->convert_iter_to_child_iter(iter), 6);
-	sdata->set_text(key);
-	write("Sending message %O\n", key);
+	string messages = "";
+	foreach (self->get_selection()->get_selected_rows(win->messages), object path)
+	{
+		//All the conversions :(
+		object iter = win->messagesort->convert_iter_to_child_iter(win->messagesort->get_iter(path));
+		messages += "\n" + win->messages->get_value(iter, 6);
+	}
+	sdata->set_text(messages);
+	write("Sending message(s) %O\n", messages);
 }
 
 void sig_folderview_drag_data_received(GTK2.Widget self, GDK2.DragContext drag_context,
 	int x, int y, GTK2.SelectionData sdata, int info, int timestamp)
 {
-	write("You dropped message %O\n", sdata->get_text());
+	string messages = sdata->get_text();
+	write("You dropped message(s) %O\n", messages);
+	if (messages == "") return; //Nothing was selected (shouldn't happen)
 	write("Dest row %O\n", self->get_dest_row_at_pos(x, y));
 	object path = self->get_dest_row_at_pos(x, y)->path;
 	array row = win->folders->get_row(win->folders->get_iter(path));
@@ -82,7 +90,8 @@ void sig_folderview_drag_data_received(GTK2.Widget self, GDK2.DragContext drag_c
 	//NOTE: Copying messages is perfectly acceptable in the protocol (and,
 	//in fact, moving is done by copying and deleting), but it's an unusual
 	//thing to want to do. Do we need to support it?
-	G->G->connection->move_message(win->curaddr, sdata->get_text(), row[1]);
+	foreach (messages / "\n" - ({""}), string msg)
+		G->G->connection->move_message(win->curaddr, msg, row[1]);
 }
 
 //Locate an account by its text and return an iterator

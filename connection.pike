@@ -200,7 +200,7 @@ void response_move(mapping conn, bytes line)
 	sscanf(line, "OK [COPYUID %d %d %d]", int destvalidity, int sourceuid, int destuid);
 	if (!destuid) return;
 	send(conn, sprintf("move2 uid store %d +flags.silent (\\Deleted)\r\nmove3 uid expunge %<d\r\n", sourceuid));
-	response_fldselect(conn, ""); //TODO: Confirm that the message is gone, and then just remove it.
+	response_fldselect(conn, ""); //TODO: Confirm that the message is gone, and then just remove it. Current system is slow for multi-select move.
 }
 
 void move_message(string addr, string key, string dest)
