@@ -19,12 +19,15 @@ void select_folder(string addr, string folder)
 {
 	mapping conn = connections[addr];
 	if (!conn) return;
+	conn->cur_folder = folder;
 	send(conn, "fldselect select " + folder + "\r\n");
 }
 
 void response_fldselect(mapping conn, bytes line)
 {
-	conn->message_cache = ([]);
+	if (!conn->folder_cache) conn->folder_cache = ([]);
+	if (!conn->folder_cache[conn->cur_folder]) conn->folder_cache[conn->cur_folder] = ([]);
+	conn->message_cache = conn->folder_cache[conn->cur_folder];
 	G->G->window->clear_messages();
 	send(conn, "a uid search all\r\n");
 }
@@ -33,7 +36,20 @@ void response_UNTAGGED_SEARCH(mapping conn, bytes line)
 {
 	if (line == "") return; //Empty folder
 	array(int) uids = (array(int))(line/" ");
-	send(conn, sprintf("a uid fetch %d:%d (flags internaldate rfc822.header)\r\n", uids[0], uids[-1]));
+	foreach (uids, int uid)
+	{
+		if (conn->message_cache[uid])
+		{
+			//Cache hit - assume it hasn't changed
+			response_UNTAGGED_FETCH(conn, sprintf("0 (UID %d)", uid));
+		}
+		else
+		{
+			//Cache miss. Most likely, the rest of the messages are new, so just fetch them all.
+			send(conn, sprintf("a uid fetch %d:%d (flags internaldate rfc822.header)\r\n", uid, uids[-1]));
+			return;
+		}
+	}
 }
 
 void response_auth(mapping conn, bytes line)
