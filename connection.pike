@@ -31,6 +31,7 @@ void response_fldselect(mapping conn, bytes line)
 
 void response_UNTAGGED_SEARCH(mapping conn, bytes line)
 {
+	if (line == "") return; //Empty folder
 	array(int) uids = (array(int))(line/" ");
 	send(conn, sprintf("a uid fetch %d:%d (flags internaldate rfc822.header)\r\n", uids[0], uids[-1]));
 }
