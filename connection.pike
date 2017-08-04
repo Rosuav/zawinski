@@ -423,7 +423,12 @@ void send_message(string addr, string msgid, string body, array(string) recipien
 
 void create()
 {
-	if (G->G->connection) connections = G->G->connection->connections;
+	if (G->G->connection)
+	{
+		connections = G->G->connection->connections;
+		foreach (connections; string addr; mapping conn)
+			if (conn->sock) conn->sock->set_nonblocking(sockread, sockwrite, sockclosed);
+	}
 	G->G->connection = this;
 	call_out(connect, 0);
 }
