@@ -353,6 +353,7 @@ void connect()
 			"addr": addr,
 			"readbuffer": "",
 			"writeme": sprintf("auth login %s %s\r\n", info->login, info->password),
+			"smtpauth": MIME.encode_base64("\0" + info->login + "\0" + info->password),
 		]);
 		conn->establish = establish_connection(info->imap, 143, complete_connection, conn);
 		window->add_account(addr);
@@ -361,21 +362,34 @@ void connect()
 
 void smtpline(mapping info, bytes line)
 {
+	if (sscanf(line, "%d-%s", int code, line) == 2) return; //Continuation line
 	if (sscanf(line, "%d %s", int code, line) && code)
 	{
 		//Normal server message - status code plus human-readable
 		switch (code)
 		{
 			case 220: //Initial greeting
+			case 235: //Auth successful
 			case 250: //Positive response
 			case 354: //Socket to me
+			{
+				if (has_value(line, "start TLS"))
+				{
+					SSL.File ssl = SSL.File(info->sock, SSL.Context());
+					ssl->set_id(info);
+					ssl->set_nonblocking(G->G->connection->smtpread, G->G->connection->smtpwrite, 0);
+					ssl->connect();
+					info->sock = ssl;
+				}
 				info->writeme += info->data[0];
 				info->data = info->data[1..];
 				smtpwrite(info);
 				break;
+			}
 			default: //Abort connection if we don't understand
 				werror("UNKNOWN SMTP RESPONSE\n%d %s\n", code, line);
 			case 554: //Abort also on error
+			case 535: //Or on auth failure
 				info->writeme += "quit\r\n";
 				smtpwrite(info);
 			case 221: //OK, bye [0:08:53]
@@ -407,19 +421,21 @@ void deliver_message(string|Stdio.File|int(0..0) status, mapping info)
 	info->sock = status;
 	status->set_id(info);
 	info->data = ({
-		sprintf("helo %s\r\n", gethostname() || "zawinski"),
+		"starttls\r\n",
+		sprintf("ehlo %s\r\n", gethostname() || "zawinski"),
+		info->auth && sprintf("auth plain %s\r\n", info->auth),
 		sprintf("mail from:%s\r\n", persist["accounts"][info->addr]->from),
 		}) + sprintf("rcpt to:%s\r\n", info->recipients[*]) + ({
 		"data\r\n",
 		info->body + "\r\n.\r\n", //NOTE: Could be huge. Might end up blocking.
 		"quit\r\n"
-	});
+	}) - ({0});
 	status->set_nonblocking(G->G->connection->smtpread, G->G->connection->smtpwrite, 0);
 }
 
 void send_message(string addr, string msgid, string body, array(string) recipients)
 {
-	//TODO: Use 587 if available
+	//TODO: Use port 25 if 587 doesn't respond
 	//Currently assumes the SMTP server is the IMAP server.
 	mapping info = (["addr": addr, "msgid": msgid, "body": body, "recipients": recipients, "readbuffer": "", "writeme": ""]);
 	if (!mappingp(persist["sendme"])) persist["sendme"] = ([]);
@@ -433,8 +449,9 @@ void send_message(string addr, string msgid, string body, array(string) recipien
 	//properly actually depends on a fair amount of statefulness, though (exactly how much
 	//gets aborted if the server rejects the literal?), so I'm okay with leaving it in "naughty
 	//mode" for now.
+	info->auth = conn->smtpauth;
 	send(conn, sprintf("sendmail append INBOX.Sent (Sending) {%d}\r\n%s\r\n", sizeof(body), body));
-	establish_connection(persist["accounts"][addr]->imap, 25, deliver_message, info);
+	establish_connection(persist["accounts"][addr]->imap, 587, deliver_message, info);
 }
 
 void create()
