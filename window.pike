@@ -62,6 +62,12 @@ void makewindow()
 
 int sig_mainwindow_destroy() {exit(0);}
 
+/* TODO: Multiselect + drag unselects everything else.
+
+Is there a way to hook the mouse down event and only affect selection AFTER the mouse event has
+been proven to be a click? Alternatively, can something else be done around the outside of the
+entire selection mechanic to carry the info into d+d?
+*/
 void sig_messageview_drag_data_get(GTK2.Widget self, GDK2.DragContext drag_context,
 	GTK2.SelectionData sdata, int info, int time)
 {
