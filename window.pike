@@ -255,15 +255,16 @@ class show_message(string addr, mapping msg)
 		Parser.HTML entities = Parser.HTML()->add_entities(Parser.html_entities);
 		multiset(string) attributes = (<>);
 		GTK2.TextBuffer buf = tv->get_buffer();
-		int softspace = 0;
+		int had_space = 0;
 		int had_linebreak = 0;
 
 		mixed linebreak(object p, mapping attrs, int count)
 		{
 			//count is normally 2, but is 1 for <br>
 			if (had_linebreak) return ({ }); //Suppress repeated <div> breaks with no text between
+			if (had_space) buf->backspace(buf->get_end_iter(), 0, 0); //Before a block-level tag, suppress loose whitespace.
 			buf->insert_with_tags_by_name(buf->get_end_iter(), "\n" * count, count, (array)attributes);
-			softspace = 0; //After a block-level tag, loose whitespace is suppressed.
+			had_space = 0;
 			had_linebreak = 1;
 			return ({ });
 		}
@@ -281,12 +282,10 @@ class show_message(string addr, mapping msg)
 		{
 			//Collapse all whitespace into a single space
 			txt = whites->replace(string_to_utf8(entities->feed(txt)->read()), " ");
-			if (had_linebreak && has_prefix(txt, " ")) txt = txt[1..]; //Suppress leading spaces after block-level tags
+			if ((had_linebreak || had_space) && has_prefix(txt, " ")) txt = txt[1..]; //Suppress leading spaces after block-level tags
 			//TODO: If we've just *gained* an attribute, we probably want the soft space
 			//to be inserted _without_ that attr. Not sure about if we just *lost* one.
-			if (softspace) txt = " " + txt;
-			softspace = has_suffix(txt, " ");
-			if (softspace) txt = txt[..<1];
+			had_space = has_suffix(txt, " ");
 			if (txt != "") buf->insert_with_tags_by_name(buf->get_end_iter(), txt, sizeof(txt), (array)attributes);
 			had_linebreak = 0;
 			return ({ });
