@@ -305,6 +305,17 @@ class show_message(string addr, mapping msg)
 			return ({ });
 		}
 
+		multiset(string) seen_unknowns = (<>);
+		mixed unknown_tag(object p, string cur)
+		{
+			sscanf(cur, "%*s<%*[/]%s%*[ >]", string tag);
+			if (!seen_unknowns[tag])
+			{
+				write("Unknown tag: %O\n", tag);
+				seen_unknowns[tag] = 1;
+			}
+		}
+
 		object p = Parser.HTML();
 		foreach (html_tags; string tag; mapping styles)
 		{
@@ -313,14 +324,18 @@ class show_message(string addr, mapping msg)
 			p->add_tag(tag, ({attribute, tag, block}));
 			p->add_tag("/"+tag, ({attribute, "/"+tag, block}));
 		}
+		//Suppress these tags and their contents
 		foreach ("title style script"/" ", string tag)
 			p->add_container(tag, "");
+		//These are treated as block tags but with no attributes. For block
+		//tags that affect the display of their contents, see html_tags above.
 		foreach ("p div section header footer article aside address"/" ", string tag)
 			p->add_tag(tag, ({linebreak, 2}))->add_tag("/"+tag, ({linebreak, 2}));
 		p->add_tag("br", ({linebreak, 1}));
 		p->add_tag("img", image);
 		p->ignore_comments(1);
 		p->_set_data_callback(data);
+		p->_set_tag_callback(unknown_tag);
 		p->finish(html);
 		buf->insert(buf->get_end_iter(), "\n", 1);
 	}
