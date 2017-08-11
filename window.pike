@@ -304,8 +304,8 @@ class show_message(string addr, mapping msg)
 		}
 		foreach ("style script"/" ", string tag)
 			p->add_container(tag, "");
-		foreach ("p div section header footer article aside address"/" ", string tag)
-			p->add_tag(tag, ({linebreak, 2}));
+		foreach ("p div section header footer article aside address title h1 h2 h3"/" ", string tag)
+			p->add_tag(tag, ({linebreak, 2}))->add_tag("/"+tag, ({linebreak, 2}));
 		p->add_tag("br", ({linebreak, 1}));
 		p->add_tag("img", image);
 		p->ignore_comments(1);
