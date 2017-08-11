@@ -249,6 +249,16 @@ class show_message(string addr, mapping msg)
 		int softspace = 0;
 		int had_linebreak = 0;
 
+		mixed linebreak(object p, mapping attrs, int count)
+		{
+			//count is normally 2, but is 1 for <br>
+			if (had_linebreak) return ({ }); //Suppress repeated <div> breaks with no text between
+			buf->insert_with_tags_by_name(buf->get_end_iter(), "\n" * count, count, (array)attributes);
+			softspace = 0; //After a block-level tag, loose whitespace is suppressed.
+			had_linebreak = 1;
+			return ({ });
+		}
+
 		mixed attribute(object p, mapping attrs, string tag)
 		{
 			//write("tag %s: %O\n", tag, attrs);
@@ -269,16 +279,6 @@ class show_message(string addr, mapping msg)
 			if (softspace) txt = txt[..<1];
 			if (txt != "") buf->insert_with_tags_by_name(buf->get_end_iter(), txt, sizeof(txt), (array)attributes);
 			had_linebreak = 0;
-			return ({ });
-		}
-
-		mixed linebreak(object p, mapping attrs, int count)
-		{
-			//count is normally 2, but is 1 for <br>
-			if (had_linebreak) return ({ }); //Suppress repeated <div> breaks with no text between
-			buf->insert_with_tags_by_name(buf->get_end_iter(), "\n" * count, count, (array)attributes);
-			softspace = 0; //After a block-level tag, loose whitespace is suppressed.
-			had_linebreak = 1;
 			return ({ });
 		}
 
