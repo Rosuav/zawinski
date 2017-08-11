@@ -302,10 +302,13 @@ class show_message(string addr, mapping msg)
 			p->add_tag(tag, ({attribute, tag}));
 			p->add_tag("/"+tag, ({attribute, "/"+tag}));
 		}
+		foreach ("style script"/" ", string tag)
+			p->add_container(tag, 0);
 		foreach ("p div section header footer article aside address"/" ", string tag)
 			p->add_tag(tag, ({linebreak, 2}));
 		p->add_tag("br", ({linebreak, 1}));
 		p->add_tag("img", image);
+		p->ignore_comments(1);
 		p->_set_data_callback(data);
 		p->finish(html);
 		buf->insert(buf->get_end_iter(), "\n", 1);
