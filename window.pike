@@ -17,8 +17,17 @@ GTK2.TreeViewColumn GTK2TreeViewColumn(string|mapping title_or_props, GTK2.CellR
 
 constant html_tags = ([
 	"b": (["weight": GTK2.PANGO_WEIGHT_BOLD]),
+	"strong": (["weight": GTK2.PANGO_WEIGHT_BOLD]),
 	"i": (["style": GTK2.PANGO_STYLE_ITALIC]),
+	"em": (["style": GTK2.PANGO_STYLE_ITALIC]),
 	"a": (["foreground": "blue", "underline": GTK2.PANGO_UNDERLINE_SINGLE]),
+	//Block tags are rendered the same way as inline tags, but have newlines before and after.
+	"h1": (["display": "block", "weight": GTK2.PANGO_WEIGHT_BOLD, "size": 20*1024]),
+	"h2": (["display": "block", "weight": GTK2.PANGO_WEIGHT_BOLD, "size": 18*1024]),
+	"h3": (["display": "block", "weight": GTK2.PANGO_WEIGHT_BOLD, "size": 16*1024]),
+	"h4": (["display": "block", "weight": GTK2.PANGO_WEIGHT_BOLD, "size": 14*1024]),
+	"h5": (["display": "block", "weight": GTK2.PANGO_WEIGHT_BOLD, "size": 12*1024]),
+	"h6": (["display": "block", "weight": GTK2.PANGO_WEIGHT_BOLD, "size": 10*1024]),
 ]);
 
 Regexp.SimpleRegexp whites = Regexp.SimpleRegexp("[ \r\n\t]+");
@@ -259,11 +268,12 @@ class show_message(string addr, mapping msg)
 			return ({ });
 		}
 
-		mixed attribute(object p, mapping attrs, string tag)
+		mixed attribute(object p, mapping attrs, string tag, int blocktag)
 		{
 			//write("tag %s: %O\n", tag, attrs);
 			if (tag[0] == '/') attributes[tag[1..]] = 0;
 			else attributes[tag] = 1;
+			if (blocktag) return linebreak(p, attrs, 2);
 			return ({ });
 		}
 
@@ -298,13 +308,14 @@ class show_message(string addr, mapping msg)
 		object p = Parser.HTML();
 		foreach (html_tags; string tag; mapping styles)
 		{
+			int block = m_delete(styles, "display") == "block";
 			buf->create_tag(tag, styles);
-			p->add_tag(tag, ({attribute, tag}));
-			p->add_tag("/"+tag, ({attribute, "/"+tag}));
+			p->add_tag(tag, ({attribute, tag, block}));
+			p->add_tag("/"+tag, ({attribute, "/"+tag, block}));
 		}
 		foreach ("style script"/" ", string tag)
 			p->add_container(tag, "");
-		foreach ("p div section header footer article aside address title h1 h2 h3"/" ", string tag)
+		foreach ("p div section header footer article aside address title"/" ", string tag)
 			p->add_tag(tag, ({linebreak, 2}))->add_tag("/"+tag, ({linebreak, 2}));
 		p->add_tag("br", ({linebreak, 1}));
 		p->add_tag("img", image);
