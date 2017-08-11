@@ -21,6 +21,7 @@ constant html_tags = ([
 	"i": (["style": GTK2.PANGO_STYLE_ITALIC]),
 	"em": (["style": GTK2.PANGO_STYLE_ITALIC]),
 	"a": (["foreground": "blue", "underline": GTK2.PANGO_UNDERLINE_SINGLE]),
+	"u": (["underline": GTK2.PANGO_UNDERLINE_SINGLE]),
 	//Block tags are rendered the same way as inline tags, but have newlines before and after.
 	"h1": (["display": "block", "weight": GTK2.PANGO_WEIGHT_BOLD, "size": 20*1024]),
 	"h2": (["display": "block", "weight": GTK2.PANGO_WEIGHT_BOLD, "size": 18*1024]),
