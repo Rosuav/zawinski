@@ -21,7 +21,7 @@ constant html_tags = ([
 	"a": (["foreground": "blue", "underline": GTK2.PANGO_UNDERLINE_SINGLE]),
 ]);
 
-Regexp.SimpleRegexp whites = Regexp.SimpleRegexp("[ \n\t]+");
+Regexp.SimpleRegexp whites = Regexp.SimpleRegexp("[ \r\n\t]+");
 
 void makewindow()
 {
