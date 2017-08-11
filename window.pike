@@ -303,7 +303,7 @@ class show_message(string addr, mapping msg)
 			p->add_tag("/"+tag, ({attribute, "/"+tag}));
 		}
 		foreach ("style script"/" ", string tag)
-			p->add_container(tag, 0);
+			p->add_container(tag, "");
 		foreach ("p div section header footer article aside address"/" ", string tag)
 			p->add_tag(tag, ({linebreak, 2}));
 		p->add_tag("br", ({linebreak, 1}));
