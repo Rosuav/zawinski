@@ -447,10 +447,33 @@ constant menu_options_update = "Update code";
 void options_update()
 {
 	int err = G->bootstrap_all();
+	G->G->autoupdate_pending = 0; //Re-enable autoupdates
 	if (!err) return; //All OK? Be silent.
 	if (string winid = getenv("WINDOWID")) //On some Linux systems we can pop the console up.
 		catch (Process.create_process(({"wmctrl", "-ia", winid}))->wait()); //Try, but don't mind errors, eg if wmctrl isn't installed.
 	MessageBox(0, GTK2.MESSAGE_ERROR, GTK2.BUTTONS_OK, err + " compilation error(s) - see console", win->mainwindow);
+}
+
+constant menu_options_update_auto = "Update code automatically";
+class options_update_auto
+{
+	inherit Filesystem.Monitor.basic;
+
+	void create()
+	{
+		::create();
+		write("Monitoring for code changes.\n");
+		monitor("zawinski.pike");
+		monitor(G->bootstrap_files[*]);
+		set_nonblocking();
+	}
+
+	void data_changed(string path)
+	{
+		if (G->G->autoupdate_pending) return;
+		G->G->autoupdate_pending = 1;
+		call_out(options_update, 0.1);
+	}
 }
 
 constant menu_options_accounts = "Configure accounts";
