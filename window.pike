@@ -282,7 +282,7 @@ class show_message(string addr, mapping msg)
 		{
 			//Collapse all whitespace into a single space
 			txt = whites->replace(string_to_utf8(entities->feed(txt)->read()), " ");
-			if ((had_linebreak || had_space) && has_prefix(txt, " ")) txt = txt[1..]; //Suppress leading spaces after block-level tags
+			if (had_linebreak && has_prefix(txt, " ")) txt = txt[1..]; //Suppress leading spaces after block-level tags
 			//TODO: If we've just *gained* an attribute, we probably want the soft space
 			//to be inserted _without_ that attr. Not sure about if we just *lost* one.
 			had_space = has_suffix(txt, " ");
