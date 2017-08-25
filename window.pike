@@ -315,6 +315,21 @@ class show_message(string addr, mapping msg)
 				seen_unknowns[tag] = 1;
 			}
 		}
+		mixed unknown_entity(object p, string cur)
+		{
+			if (sscanf(cur, "&#%d;", int char) && char && cur == sprintf("&#%d;", char))
+			{
+				//It's something of the form "&#nnnn;", very strictly.
+				return (string)({char});
+			}
+			//TODO: Support "&#xNNN;" notation too? Only if they actually come up.
+			sscanf(cur, "%*s&%s;", string entity);
+			if (!seen_unknowns[entity])
+			{
+				write("Unknown entity: %O\n", entity);
+				seen_unknowns[entity] = 1;
+			}
+		}
 
 		object p = Parser.HTML();
 		foreach (html_tags; string tag; mapping styles)
@@ -336,6 +351,7 @@ class show_message(string addr, mapping msg)
 		p->ignore_comments(1);
 		p->_set_data_callback(data);
 		p->_set_tag_callback(unknown_tag);
+		p->_set_entity_callback(unknown_entity);
 		p->finish(html);
 		buf->insert(buf->get_end_iter(), "\n", 1);
 	}
